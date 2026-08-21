@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-sand: var(--sand);
+  --color-cream: var(--cream);
+  --color-wood: var(--wood);
+  --color-green: var(--green);
+  --color-peacock: var(--peacock);
+  --color-border: var(--border);
+  --color-line: var(--line);
+
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-deva: var(--font-noto-deva), serif;
+}
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  --muted-foreground: #77716a;
+  --sand: #ede7de;
+  --cream: #f6f2ec;
+  --wood: #8a6a4a;
+  --green: #7f947a;
+  --peacock: #176b74;
+  --border: #e7e2d9;
+  --line: #ded7cb;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  ::selection {
+    background: var(--sand);
+    color: var(--foreground);
+  }
+}
+
+/* Hide default cursor only when the custom cursor is active (desktop, fine pointer) */
+@media (hover: hover) and (pointer: fine) {
+  html.custom-cursor,
+  html.custom-cursor * {
+    cursor: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.custom-cursor,
+  html.custom-cursor * {
+    cursor: auto;
+  }
+}
+
+.label-caps {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* thin scrollbar, unobtrusive */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
