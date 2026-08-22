@@ -40,7 +40,9 @@ export function ImageReveal({
         className="absolute inset-0"
         initial={{ clipPath: 'inset(100% 0 0 0)' }}
         whileInView={{ clipPath: 'inset(0% 0 0 0)' }}
-        viewport={{ once: true, amount: 0.3 }}
+        // a numeric `amount` here never resolves (motion 13.1.1), leaving the
+        // reveal permanently clipped — an equivalent `margin` avoids that path
+        viewport={{ once: true, margin: '0px 0px -30% 0px' }}
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
         <motion.div style={{ scale }} className="absolute inset-0">

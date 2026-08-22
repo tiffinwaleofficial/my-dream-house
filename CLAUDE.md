@@ -213,42 +213,73 @@ What was done, in order:
 10. Committed and pushed all of the above to `origin/main` in small, described
     commits.
 
+### Session 2 (2026-08-22) — critical image-reveal fix, real visual QA, sound crash fix
+
+This session finally did the human-eye visual QA that Session 1 flagged as
+unverified (previous cloud browser tooling couldn't render a compositing
+pane). This time, Playwright with the pre-installed Chromium worked, and
+screenshotting the site at desktop/tablet/mobile widths surfaced a
+**severe, sitewide, previously-invisible bug**:
+
+1. **Every room photo on the entire site was permanently invisible.**
+   `components/image-reveal.tsx` reveals each room's photo via Framer Motion's
+   `whileInView` animating `clipPath` from `inset(100%...)` to `inset(0%...)`,
+   gated by `viewport={{ once: true, amount: 0.3 }}`. Confirmed via direct DOM
+   inspection (inline `style` never changed from the `initial` clip, in both
+   `next dev` and a real `next build && next start` production server — not a
+   dev-only artifact) that **a numeric `viewport.amount` value silently
+   prevents `whileInView` from ever firing** in the installed `motion@13.1.1`
+   (latest available on npm at the time — not something to "just upgrade
+   away"). A hand-rolled `IntersectionObserver` on the very same DOM node
+   confirmed real intersection reaching 100% visible, proving this is a
+   library/config bug, not a scroll or timing issue. Text elements using the
+   same numeric `amount` pattern (room titles, story section, etc.) were
+   unaffected — only this specific `absolute inset-0` + `clipPath` structure
+   triggered it. **Fix**: swapped `amount: 0.3` for an equivalent
+   `margin: '0px 0px -30% 0px'` (same "reveal ~30% into view" intent, avoids
+   the broken code path entirely). Verified fixed across all 15 rooms in both
+   dev and a production build. This was almost certainly why Session 1's
+   "zero console errors" check looked clean — the bug throws nothing, it just
+   silently never reveals a single photo, meaning every visitor before this
+   fix would have scrolled through an entirely photo-less house.
+2. **Ambient sound volume crash.** `components/ambient-sound.tsx`'s `fade()`
+   helper threw `IndexSizeError: Failed to set the 'volume' property... is
+   outside the range [0, 1]` in the console on load and on toggling — caused
+   by overlapping/uncancelled fade `requestAnimationFrame` loops racing on
+   `audio.volume`. Fixed by clamping the computed value to `[0, 1]` and adding
+   a generation token so a new `fade()` call supersedes any in-flight one
+   instead of fighting it. Verified with 6x rapid toggle-clicking — no more
+   thrown errors.
+3. **`roomIndex` label for room 11** ("Her Room" → auto-derived label "Room",
+   flagged as pending in Session 1) — fixed with an explicit `labelOverrides`
+   map in `lib/rooms.ts` rather than touching the regex used by every other
+   room.
+4. **Visual QA actually done this time**, desktop (1440px) / tablet (768px) /
+   iPhone 13 mobile, via Playwright screenshots: intro overlay, hero
+   (`"The House of Riya"` wraps to two graceful lines on mobile, stays on one
+   line at `md:`+ — no overflow anywhere), the house-index menu, and a full
+   scroll-through of every room. The bottom-right sound toggle and
+   bottom-left secret feather don't visually collide with anything at any
+   width. Room order was **not** touched, per instruction.
+
+Room order, palette, copy, and every other file were left untouched — this
+was a targeted bug-fix + verification pass, not a redesign.
+
 ## Pending / not yet done
 
-Nothing here is broken — these are the honest gaps left after Session 1, roughly in priority order:
+Nothing here is broken — these are the honest gaps left after Session 2, roughly in priority order:
 
-1. **No human-eye visual QA yet.** This session's browser tool could not render
-   a visible/compositing pane (screenshots timed out with "Browser pane is not
-   displayed" every time, in both the sandboxed Claude Browser and after
-   confirming no real Chrome was connected via Claude-in-Chrome). All
-   verification was DOM/network/console-level (page text extraction,
-   accessibility tree, network request log, console log) — **not** a real
-   visual check. Whoever picks this up next should actually look at the
-   rendered site, ideally at desktop + tablet + mobile widths, and check:
-   - Does the longer title **"The House of Riya"** (18 chars) wrap/scale
-     acceptably everywhere "Radha's House" (13 chars) used to fit — especially
-     `hero-house.tsx` and `intro-experience.tsx` at `text-7xl`/`text-8xl`?
-   - Does the new bottom-right sound toggle visually collide with anything
-     (it sits at the same corner-inset rhythm as `secret-feather.tsx`
-     bottom-left and `room-navigation.tsx` top-right, but hasn't been eyeballed)?
-   - General cinematic feel — scroll pacing, image reveal timing, parallax —
-     matches the "premium architecture editorial" bar from the brief.
-2. **`roomIndex` label for room 11** ("Her Room" → auto-derived label "Room")
-   reads oddly terse in the house map / nav menu. Either give it an explicit
-   `label` override in `lib/rooms.ts`'s `roomIndex` mapping, or rename the room
-   title itself.
-3. **Mobile responsiveness** — not visually verified this session (see #1).
-   The code already has the right instincts (custom cursor disabled on
-   touch/coarse pointers, Lenis disabled under `prefers-reduced-motion`,
-   responsive `sizes` props on all `next/image` usages) but hasn't been looked
-   at on an actual small viewport.
-4. **No deploy target connected yet.** The repo is on GitHub
+1. **Mobile responsiveness** — now spot-checked via Playwright screenshots at
+   375px (iPhone 13) this session (looks correct: hero, intro, nav pill, sound
+   toggle all sit properly), but not exhaustively verified across every room
+   layout variant (`full`/`wide`/`split`/`meta`) or on a real device.
+2. **No deploy target connected yet.** The repo is on GitHub
    (`tiffinwaleofficial/my-dream-house`, `main` branch) but not yet imported
    into Vercel or any host. `@vercel/analytics` is already a dependency,
    suggesting Vercel was the intended target — importing the repo there would
    also solve the "does image optimization actually work in production"
    question for free (Vercel bundles `sharp`-equivalent infra automatically).
-5. **Raw/duplicate source images** sit in the parent folder
+3. **Raw/duplicate source images** sit in the parent folder
    (`D:\Personal Projects\My Dream Home\*.png` — e.g. "Warm Modern Kitchen with
    Marble Island.png", "Cozy Kitchen Herb Garden Window.png") one level above
    this repo. These were compared against `public/assets/home/*` and found to
@@ -257,10 +288,10 @@ Nothing here is broken — these are the honest gaps left after Session 1, rough
    superseded by the clean versions actually in use. Left untouched (not
    deleted — they're the user's files, not build artifacts), but they're not
    wired into the site and don't need to be.
-6. **No lint script / ESLint config** exists. Not blocking anything today
+4. **No lint script / ESLint config** exists. Not blocking anything today
    (`tsc --noEmit` and `next build` both pass clean), but worth adding if the
    project keeps growing.
-7. The brief's item #31 mentions Three.js as an optional stretch for the house
+5. The brief's item #31 mentions Three.js as an optional stretch for the house
    map "only if it genuinely adds value" — current `house-map.tsx` is a clean
    CSS-grid architectural plan, which is the right call per the brief's own
    "don't build unnecessarily heavy 3D" guidance. Not a gap, just confirming

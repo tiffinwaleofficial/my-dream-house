@@ -172,13 +172,18 @@ export const rooms: Room[] = [
   },
 ]
 
+/** Explicit label overrides for rooms whose auto-derived label reads oddly. */
+const labelOverrides: Record<string, string> = {
+  bedroom: 'Her Room',
+}
+
 /** Index used by the floating navigation + floor plan (includes entry). */
 export const roomIndex: { id: string; number: string; label: string }[] = [
   { id: 'entry', number: '01', label: 'Entry' },
   ...rooms.map((r) => ({
     id: r.id,
     number: r.number,
-    label: r.title.replace(/^The\s|^A\s|^Her\s/i, ''),
+    label: labelOverrides[r.id] ?? r.title.replace(/^The\s|^A\s|^Her\s/i, ''),
   })),
   { id: 'her', number: '16', label: 'Her' },
 ]

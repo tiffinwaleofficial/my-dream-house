@@ -7,12 +7,16 @@ const STORAGE_KEY = 'house-sound-muted'
 const TARGET_VOLUME = 0.14
 const FADE_MS = 1800
 
+let fadeToken = 0
+
 function fade(audio: HTMLAudioElement, to: number, onDone?: () => void) {
+  const token = ++fadeToken
   const from = audio.volume
   const start = performance.now()
   const step = (now: number) => {
+    if (token !== fadeToken) return // superseded by a newer fade
     const t = Math.min(1, (now - start) / FADE_MS)
-    audio.volume = from + (to - from) * t
+    audio.volume = Math.min(1, Math.max(0, from + (to - from) * t))
     if (t < 1) requestAnimationFrame(step)
     else onDone?.()
   }
