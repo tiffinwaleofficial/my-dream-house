@@ -33,7 +33,7 @@ export function FinalExperience() {
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 1, ease }}
           >
-            Radha&apos;s House
+            The House of Riya
           </motion.h2>
           <motion.p
             className="mt-6 font-serif text-2xl font-light italic text-background/90 md:text-3xl"

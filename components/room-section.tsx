@@ -109,7 +109,6 @@ export function RoomSection({ room }: { room: Room }) {
               <RiyaPortrait
                 src={room.portrait}
                 alt={room.portraitAlt ?? room.alt}
-                caption="Portrait — placeholder"
                 className="w-44 justify-self-end md:w-56"
               />
             </div>
@@ -125,7 +124,6 @@ export function RoomSection({ room }: { room: Room }) {
               <RiyaPortrait
                 src={room.portrait}
                 alt={room.portraitAlt ?? room.alt}
-                caption="Portrait — placeholder"
                 className="mt-10 w-40 md:w-52"
               />
             )}

@@ -60,7 +60,7 @@ export function IntroExperience({ onEnter }: { onEnter: () => void }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.4, ease, delay: 1.7 }}
             >
-              Radha&apos;s House
+              The House of Riya
             </motion.h1>
 
             <motion.p
@@ -100,7 +100,7 @@ export function IntroExperience({ onEnter }: { onEnter: () => void }) {
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, delay: 3.6 }}
           >
-            Radha&apos;s House
+            The House of Riya
           </motion.span>
         </motion.div>
       )}

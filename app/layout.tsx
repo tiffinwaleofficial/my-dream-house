@@ -25,7 +25,7 @@ const notoDeva = Noto_Serif_Devanagari({
 })
 
 export const metadata: Metadata = {
-  title: "Radha's House — A home imagined from the heart",
+  title: 'The House of Riya — A home imagined from the heart',
   description:
     'A cinematic, interactive walk through a dream home — room by room, detail by detail. Not just a house. A feeling.',
   generator: 'v0.app',

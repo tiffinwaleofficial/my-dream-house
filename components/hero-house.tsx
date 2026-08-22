@@ -41,7 +41,7 @@ export function HeroHouse() {
         >
           <p className="label-caps text-background/80">01 — Arrival</p>
           <h2 className="mt-6 font-serif text-6xl font-light leading-[0.95] tracking-tight text-background md:text-8xl">
-            Radha&apos;s House
+            The House of Riya
           </h2>
           <p className="mt-8 max-w-md text-balance font-serif text-2xl font-light italic text-background/90 md:text-3xl">
             Not just a house. A feeling.
