@@ -134,6 +134,30 @@ export function HerCollage() {
         />
 
         <CollagePhoto
+          src="/assets/riya/collage/her-snow-heart.jpg"
+          alt="Riya making a heart shape with her hands in the snow"
+          caption="A heart, even in the snow"
+          aspect="aspect-[3/4]"
+          className="col-span-1 mt-16 md:col-span-4 md:col-start-1 md:mt-32"
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-fearless.jpg"
+          alt="Riya, playful and unafraid"
+          caption="Not afraid of anything"
+          aspect="aspect-[3/4]"
+          className="col-span-1 mt-6 md:col-span-4 md:col-start-5 md:mt-16"
+          delay={0.1}
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-yellow-closeup.jpg"
+          alt="Riya on an ordinary evening"
+          caption="Warm, even on ordinary days"
+          aspect="aspect-[3/4]"
+          className="col-span-2 mt-6 md:col-span-3 md:col-start-9 md:mt-40"
+          delay={0.2}
+        />
+
+        <CollagePhoto
           src="/assets/riya/collage/her-recent.jpg"
           alt="Riya today, smiling"
           caption="Right now"

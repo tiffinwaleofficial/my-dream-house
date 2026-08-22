@@ -11,6 +11,7 @@ import { HouseMap } from '@/components/house-map'
 import { RoomSection } from '@/components/room-section'
 import { SanskritTransition } from '@/components/sanskrit-transition'
 import { HerCollage } from '@/components/her-collage'
+import { HerHeart } from '@/components/her-heart'
 import { HerParents } from '@/components/her-parents'
 import { FinalExperience } from '@/components/final-experience'
 import { RoomNavigation } from '@/components/room-navigation'
@@ -43,6 +44,7 @@ export default function Page() {
         ))}
 
         <HerCollage />
+        <HerHeart />
         <HerParents />
         <FinalExperience />
       </main>
