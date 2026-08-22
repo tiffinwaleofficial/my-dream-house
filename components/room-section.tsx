@@ -89,6 +89,15 @@ export function RoomSection({ room }: { room: Room }) {
               </span>
             </div>
           )}
+          {room.portrait && (
+            <div className="mx-auto mt-10 max-w-6xl px-6">
+              <RiyaPortrait
+                src={room.portrait}
+                alt={room.portraitAlt ?? room.alt}
+                className="w-40 md:w-52"
+              />
+            </div>
+          )}
         </div>
       )}
 
