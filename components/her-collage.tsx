@@ -1,9 +1,44 @@
 'use client'
 
+import Image from 'next/image'
 import { motion } from 'motion/react'
-import { RiyaPortrait } from './riya-portrait'
+import { cn } from '@/lib/utils'
 
 const ease = [0.22, 1, 0.36, 1] as const
+
+function CollagePhoto({
+  src,
+  alt,
+  caption,
+  aspect,
+  className,
+  delay = 0,
+}: {
+  src: string
+  alt: string
+  caption: string
+  aspect: string
+  className?: string
+  delay?: number
+}) {
+  return (
+    <motion.figure
+      className={cn('relative', className)}
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -15% 0px' }}
+      transition={{ duration: 1, ease, delay }}
+    >
+      <div
+        data-cursor="image"
+        className={cn('relative w-full overflow-hidden bg-cream', aspect)}
+      >
+        <Image src={src} alt={alt} fill sizes="(max-width: 768px) 50vw, 30vw" className="object-cover" />
+      </div>
+      <figcaption className="mt-3 label-caps text-muted-foreground">{caption}</figcaption>
+    </motion.figure>
+  )
+}
 
 export function HerCollage() {
   return (
@@ -28,13 +63,21 @@ export function HerCollage() {
       </motion.h2>
 
       <div className="mt-16 grid grid-cols-2 gap-6 md:mt-24 md:grid-cols-12 md:gap-8">
-        <div className="md:col-span-5">
-          <RiyaPortrait src="/assets/riya/riya-main.png" alt="Placeholder portrait of Riya" />
-        </div>
-
-        <div className="flex flex-col justify-end md:col-span-4 md:col-start-8">
-          <RiyaPortrait src="/assets/riya/riya-tea.png" alt="Placeholder portrait — at the balcony" className="w-full" />
-        </div>
+        <CollagePhoto
+          src="/assets/riya/collage/her-baby.jpg"
+          alt="Riya as a baby"
+          caption="Where it began"
+          aspect="aspect-[3/4]"
+          className="col-span-2 md:col-span-6"
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-toddler.jpg"
+          alt="Riya as a toddler with her sibling"
+          caption="Learning to stand"
+          aspect="aspect-[4/3]"
+          className="col-span-2 flex flex-col justify-end md:col-span-5 md:col-start-8"
+          delay={0.1}
+        />
 
         <div className="col-span-2 flex items-center justify-center py-10 md:col-span-12 md:py-20">
           <p className="max-w-2xl text-balance text-center font-serif text-2xl font-light italic leading-snug text-muted-foreground md:text-4xl">
@@ -42,12 +85,29 @@ export function HerCollage() {
           </p>
         </div>
 
-        <div className="md:col-span-4 md:col-start-2">
-          <RiyaPortrait src="/assets/riya/riya-reading.png" alt="Placeholder portrait — reading" />
-        </div>
-        <div className="flex flex-col justify-end md:col-span-5 md:col-start-7">
-          <RiyaPortrait src="/assets/riya/riya-music.png" alt="Placeholder portrait — at the piano" />
-        </div>
+        <CollagePhoto
+          src="/assets/riya/collage/her-school.jpg"
+          alt="Riya in her school uniform"
+          caption="Growing up"
+          aspect="aspect-[3/4]"
+          className="col-span-1 md:col-span-3 md:col-start-1"
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-mirror.jpg"
+          alt="Riya, a mirror portrait"
+          caption="Becoming herself"
+          aspect="aspect-square"
+          className="col-span-1 mt-10 md:col-span-4 md:col-start-5 md:mt-16"
+          delay={0.1}
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-recent.jpg"
+          alt="Riya today, smiling"
+          caption="Right now"
+          aspect="aspect-[3/4]"
+          className="col-span-2 md:col-span-4 md:col-start-9"
+          delay={0.2}
+        />
       </div>
     </section>
   )
