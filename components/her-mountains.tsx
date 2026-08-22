@@ -14,25 +14,43 @@ export function HerMountains() {
 
   // Force playback the moment the video scrolls into view, rather than
   // relying solely on the autoplay attribute — some mobile browsers only
-  // honor autoplay once the element is actually visible, and until then
-  // show a native play button on the poster frame.
+  // honor autoplay once the element is actually visible. Some in-app
+  // browsers (e.g. WhatsApp's) go further and reject even a muted play()
+  // unless it's called directly inside a genuine user-gesture handler — an
+  // IntersectionObserver callback doesn't count as one, even though it
+  // fired because the user scrolled. So on rejection, fall back to
+  // retrying play() from the next real pointer/touch/scroll/key event,
+  // same pattern as the ambient sound toggle uses for its own autoplay.
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
     video.muted = true
 
+    let cancelled = false
+    const attempt = () => {
+      if (cancelled) return
+      video.play().catch(() => {
+        const retry = () => attempt()
+        window.addEventListener('pointerdown', retry, { once: true })
+        window.addEventListener('touchstart', retry, { once: true })
+        window.addEventListener('wheel', retry, { once: true })
+        window.addEventListener('keydown', retry, { once: true })
+      })
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => {})
-          }
+          if (entry.isIntersecting) attempt()
         })
       },
       { threshold: 0.1 },
     )
     observer.observe(video)
-    return () => observer.disconnect()
+    return () => {
+      cancelled = true
+      observer.disconnect()
+    }
   }, [])
 
   return (
