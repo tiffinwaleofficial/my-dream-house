@@ -158,6 +158,22 @@ export function HerCollage() {
         />
 
         <CollagePhoto
+          src="/assets/riya/collage/her-heart-filter.jpg"
+          alt="Riya, playful with a heart filter"
+          caption="Playful, always"
+          aspect="aspect-[3/4]"
+          className="col-span-1 mt-10 md:col-span-4 md:col-start-2 md:mt-20"
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-new-chapter.jpg"
+          alt="Riya after a haircut, starting fresh"
+          caption="A new chapter"
+          aspect="aspect-[3/4]"
+          className="col-span-1 md:col-span-3 md:col-start-8"
+          delay={0.1}
+        />
+
+        <CollagePhoto
           src="/assets/riya/collage/her-recent.jpg"
           alt="Riya today, smiling"
           caption="Right now"
