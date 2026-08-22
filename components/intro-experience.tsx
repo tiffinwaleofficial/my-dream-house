@@ -25,6 +25,33 @@ export function IntroExperience({ onEnter }: { onEnter: () => void }) {
     onEnter()
   }
 
+  // A scroll/swipe attempt is a valid way to dismiss the intro too — not
+  // just the button — so a visitor is never stuck here if a tap doesn't
+  // register (e.g. a slow first paint on mobile).
+  useEffect(() => {
+    if (!open) return
+    let touchStartY = 0
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > 4) enter()
+    }
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY ?? 0
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = touchStartY - (e.touches[0]?.clientY ?? touchStartY)
+      if (Math.abs(dy) > 10) enter()
+    }
+    window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
   const ease = [0.22, 1, 0.36, 1] as const
 
   return (
