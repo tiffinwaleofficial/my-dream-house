@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { blurPlaceholders } from '@/lib/blur-placeholders'
 
 /**
  * A portrait placeholder that sits inside the house story.
@@ -32,7 +33,15 @@ export function RiyaPortrait({
         data-cursor="image"
         className="relative aspect-[3/4] w-full overflow-hidden bg-cream"
       >
-        <Image src={src} alt={alt} fill sizes="(max-width: 768px) 60vw, 30vw" className="object-cover" />
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="(max-width: 768px) 60vw, 30vw"
+          className="object-cover"
+          placeholder={blurPlaceholders[src] ? 'blur' : 'empty'}
+          blurDataURL={blurPlaceholders[src]}
+        />
       </div>
       {caption ? (
         <figcaption className="mt-3 label-caps text-muted-foreground">{caption}</figcaption>

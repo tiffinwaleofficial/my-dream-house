@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { blurPlaceholders } from '@/lib/blur-placeholders'
 
 export function ImageReveal({
   src,
@@ -46,7 +47,16 @@ export function ImageReveal({
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
         <motion.div style={{ scale }} className="absolute inset-0">
-          <Image src={src} alt={alt} fill priority={priority} sizes={sizes} className="object-cover" />
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            priority={priority}
+            sizes={sizes}
+            className="object-cover"
+            placeholder={blurPlaceholders[src] ? 'blur' : 'empty'}
+            blurDataURL={blurPlaceholders[src]}
+          />
         </motion.div>
       </motion.div>
     </div>

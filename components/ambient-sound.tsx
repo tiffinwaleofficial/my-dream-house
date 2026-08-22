@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 
 const STORAGE_KEY = 'house-sound-muted'
+const NUDGE_SEEN_KEY = 'house-sound-nudge-seen'
 const TARGET_VOLUME = 0.14
 const FADE_MS = 1800
+const NUDGE_DELAY_MS = 1400
+const NUDGE_AUTO_HIDE_MS = 5000
 
 let fadeToken = 0
 
@@ -32,6 +35,7 @@ export function AmbientSound({ visible }: { visible: boolean }) {
   const playingRef = useRef(false)
   const [muted, setMuted] = useState(false)
   const [ready, setReady] = useState(false)
+  const [showNudge, setShowNudge] = useState(false)
 
   useEffect(() => {
     // Client-only bootstrap: localStorage isn't available during SSR, so the
@@ -40,6 +44,27 @@ export function AmbientSound({ visible }: { visible: boolean }) {
     setMuted(window.localStorage.getItem(STORAGE_KEY) === 'true')
     setReady(true)
   }, [])
+
+  // A brief, one-time nudge toward the sound toggle for first-time visitors —
+  // many mobile browsers block autoplay outright until a real tap, so this
+  // points at the one control that actually needs a gesture to start audio.
+  useEffect(() => {
+    if (!visible || !ready || muted) return
+    if (window.localStorage.getItem(NUDGE_SEEN_KEY) === 'true') return
+
+    const showTimer = window.setTimeout(() => {
+      setShowNudge(true)
+      window.localStorage.setItem(NUDGE_SEEN_KEY, 'true')
+    }, NUDGE_DELAY_MS)
+
+    return () => window.clearTimeout(showTimer)
+  }, [visible, ready, muted])
+
+  useEffect(() => {
+    if (!showNudge) return
+    const hideTimer = window.setTimeout(() => setShowNudge(false), NUDGE_AUTO_HIDE_MS)
+    return () => window.clearTimeout(hideTimer)
+  }, [showNudge])
 
   useEffect(() => {
     if (!visible || !ready || muted) return
@@ -70,6 +95,7 @@ export function AmbientSound({ visible }: { visible: boolean }) {
   }, [visible, ready, muted])
 
   const toggle = () => {
+    setShowNudge(false)
     const next = !muted
     setMuted(next)
     window.localStorage.setItem(STORAGE_KEY, String(next))
@@ -92,6 +118,19 @@ export function AmbientSound({ visible }: { visible: boolean }) {
     <>
       <audio ref={audioRef} src="/assets/audio/vrindavan-prayer.mp3" loop preload="none" />
       <AnimatePresence>
+        {visible && showNudge && (
+          <motion.div
+            className="fixed bottom-[4.25rem] right-5 z-50 whitespace-nowrap rounded-full border border-line bg-background/90 px-3.5 py-1.5 text-xs font-light text-muted-foreground shadow-sm backdrop-blur-md md:bottom-[5.25rem] md:right-8"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.5 }}
+          >
+            tap for sound
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
         {visible && (
           <motion.button
             type="button"
@@ -101,9 +140,13 @@ export function AmbientSound({ visible }: { visible: boolean }) {
             aria-pressed={!muted}
             className="fixed bottom-5 right-5 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-background/80 backdrop-blur-md md:bottom-8 md:right-8"
             initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: showNudge ? [1, 1.08, 1] : 1,
+            }}
             exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, scale: { duration: 1.1, repeat: showNudge ? Infinity : 0, ease: 'easeInOut' } }}
           >
             <span className="relative flex h-3.5 items-end gap-[3px]" aria-hidden>
               {[0.4, 1, 0.6].map((h, i) => (

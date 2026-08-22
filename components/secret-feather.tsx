@@ -7,8 +7,20 @@ import { PeacockFeather } from './peacock-feather'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+// A quiet, time-of-day-aware line — the house feels slightly different
+// depending on when she happens to find this secret.
+function timeOfDayLine() {
+  const hour = new Date().getHours()
+  if (hour < 5) return 'And more of it, only she will ever know — even now, this late.'
+  if (hour < 12) return 'And more of it, only she will ever know — even this early.'
+  if (hour < 17) return 'And more of it, only she will ever know.'
+  if (hour < 21) return 'And more of it, only she will ever know — as the light goes soft.'
+  return 'And more of it, only she will ever know — even now, this quiet.'
+}
+
 export function SecretFeather({ visible }: { visible: boolean }) {
   const [open, setOpen] = useState(false)
+  const [line, setLine] = useState('And more of it, only she will ever know.')
 
   return (
     <>
@@ -16,7 +28,10 @@ export function SecretFeather({ visible }: { visible: boolean }) {
         {visible && (
           <motion.button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setLine(timeOfDayLine())
+              setOpen(true)
+            }}
             data-cursor="hover"
             aria-label="A little secret"
             className="fixed bottom-5 left-5 z-50 md:bottom-8 md:left-8"
@@ -62,7 +77,7 @@ export function SecretFeather({ visible }: { visible: boolean }) {
                 There is still more to this house.
               </p>
               <p className="mt-3 text-sm font-light leading-relaxed text-muted-foreground">
-                And more of it, only she will ever know.
+                {line}
               </p>
               <button
                 type="button"

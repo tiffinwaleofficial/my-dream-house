@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { blurPlaceholders } from '@/lib/blur-placeholders'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -33,7 +34,15 @@ function CollagePhoto({
         data-cursor="image"
         className={cn('relative w-full overflow-hidden bg-cream', aspect)}
       >
-        <Image src={src} alt={alt} fill sizes="(max-width: 768px) 50vw, 30vw" className="object-cover" />
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="(max-width: 768px) 50vw, 30vw"
+          className="object-cover"
+          placeholder={blurPlaceholders[src] ? 'blur' : 'empty'}
+          blurDataURL={blurPlaceholders[src]}
+        />
       </div>
       <figcaption className="mt-3 label-caps text-muted-foreground">{caption}</figcaption>
     </motion.figure>

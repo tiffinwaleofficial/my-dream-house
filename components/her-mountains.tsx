@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'motion/react'
+import { blurPlaceholders } from '@/lib/blur-placeholders'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -148,6 +149,8 @@ export function HerMountainMoments() {
               fill
               sizes="(max-width: 768px) 50vw, 40vw"
               className="object-cover"
+              placeholder={blurPlaceholders['/assets/riya/collage/her-mountain-kiss.jpg'] ? 'blur' : 'empty'}
+              blurDataURL={blurPlaceholders['/assets/riya/collage/her-mountain-kiss.jpg']}
             />
           </div>
           <figcaption className="mt-3 label-caps text-muted-foreground">
@@ -168,6 +171,8 @@ export function HerMountainMoments() {
               fill
               sizes="(max-width: 768px) 50vw, 40vw"
               className="object-cover"
+              placeholder={blurPlaceholders['/assets/riya/collage/her-mountain-fly.jpg'] ? 'blur' : 'empty'}
+              blurDataURL={blurPlaceholders['/assets/riya/collage/her-mountain-fly.jpg']}
             />
           </div>
           <figcaption className="mt-3 label-caps text-muted-foreground">

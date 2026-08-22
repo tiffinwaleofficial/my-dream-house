@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { motion } from 'motion/react'
+import { blurPlaceholders } from '@/lib/blur-placeholders'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -23,6 +24,8 @@ export function HerParents() {
             fill
             sizes="(max-width: 768px) 90vw, 45vw"
             className="object-cover"
+            placeholder={blurPlaceholders['/assets/riya/parents.jpg'] ? 'blur' : 'empty'}
+            blurDataURL={blurPlaceholders['/assets/riya/parents.jpg']}
           />
         </motion.div>
 
