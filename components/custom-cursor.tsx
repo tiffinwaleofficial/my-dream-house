@@ -19,6 +19,11 @@ export function CustomCursor() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!fine || reduced) return
 
+    // Client-only bootstrap: matchMedia isn't available during SSR, so
+    // whether the custom cursor is enabled has to be decided post-mount
+    // rather than derived at render, right alongside subscribing to the
+    // pointer listeners below.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEnabled(true)
     document.documentElement.classList.add('custom-cursor')
 

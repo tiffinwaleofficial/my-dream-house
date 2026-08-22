@@ -34,6 +34,9 @@ export function AmbientSound({ visible }: { visible: boolean }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    // Client-only bootstrap: localStorage isn't available during SSR, so the
+    // mute preference has to be read post-mount rather than derived at render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMuted(window.localStorage.getItem(STORAGE_KEY) === 'true')
     setReady(true)
   }, [])

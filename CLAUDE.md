@@ -41,8 +41,9 @@ strong motif, not decoration spam.
   `node_modules`, but use `pnpm` (via `corepack pnpm ...`) for install/add/remove
   so the lockfile stays correct. Plain `pnpm` may not be on PATH in a fresh
   shell — use `corepack pnpm <command>` if `pnpm` alone 404s.
-- No test suite exists. No `lint` script exists in `package.json` (only
-  `dev`/`build`/`start`).
+- No test suite exists. **ESLint** (flat config, `eslint.config.mjs`, added
+  Session 3) via `npm run lint` — `eslint-config-next`, not `next lint` (Next
+  16 removed that CLI command).
 
 ## Repo layout
 
@@ -265,21 +266,89 @@ screenshotting the site at desktop/tablet/mobile widths surfaced a
 Room order, palette, copy, and every other file were left untouched — this
 was a targeted bug-fix + verification pass, not a redesign.
 
+### Session 3 (2026-08-22) — ESLint setup, exhaustive mobile/tablet QA
+
+Two items from the Pending list below, done in order.
+
+1. **ESLint config + lint script.** Next.js 16.3.0 has **removed the `next
+   lint` command entirely** (confirmed: no `next-lint.js` in
+   `node_modules/next/dist/cli/`, unlike `next-build.js`/`next-dev.js`/etc.) —
+   so the old "`next lint` scaffolds it for you" flow no longer exists as of
+   this Next version. Set up ESLint directly instead: added `eslint@^9` and
+   `eslint-config-next@16.3.0` (matched to the installed Next version) as
+   devDependencies via `corepack pnpm add -D`, approved their postinstall
+   scripts (`corepack pnpm approve-builds --all` — added `unrs-resolver: true`
+   to `pnpm-workspace.yaml`'s `allowBuilds`, next to the existing `msw`/`sharp`
+   entries), and added a flat-config `eslint.config.mjs` at the repo root that
+   composes `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`
+   (ESLint 9's flat-config format — no `.eslintrc`, no `FlatCompat` shim
+   needed since eslint-config-next 16.x ships flat-config-native exports
+   directly). Added `"lint": "eslint ."` to `package.json`.
+   Running it surfaced exactly two errors, both from
+   `eslint-plugin-react-hooks`'s newer `set-state-in-effect` rule (bundled in
+   the v7 `recommended` config eslint-config-next 16.x pulls in): a `setState`
+   call inside a bare `useEffect` in both `ambient-sound.tsx` (reading the
+   mute preference from `localStorage` after mount) and `custom-cursor.tsx`
+   (deciding cursor-enabled from `matchMedia` after mount, right where it also
+   subscribes to pointer listeners). Both are genuine, necessary client-only
+   SSR-safe bootstrap patterns — not the derived-state anti-pattern the rule
+   exists to catch — and rewriting them risked touching logic Session 2 had
+   just fixed a real crash in. Left them working exactly as-is and added a
+   narrow `eslint-disable-next-line react-hooks/set-state-in-effect` with a
+   one-line explanatory comment at each site, rather than weakening the rule
+   project-wide or refactoring verified behavior. `npm run lint` is clean.
+2. **Exhaustive mobile + tablet responsiveness QA.** Used Playwright
+   (pre-installed Chromium, real `devices['iPhone 13']` emulation for genuine
+   touch/viewport behavior, plus a 768px touch-emulated tablet context) to
+   screenshot and DOM-inspect at least one room of each of the four
+   `RoomLayout` variants (`split` → living, `full` → balcony, `meta` →
+   spiritual, `wide` → music), the hero/intro, the house-index nav menu open,
+   and the closing scene, at both widths. Checked for text/heading overflow,
+   image/wrapper overflow past the viewport, horizontal page scroll, and
+   fixed-UI (nav pill / sound toggle / secret feather) collisions
+   programmatically as well as visually. **Result: no real bugs found** — every
+   layout variant renders and reveals correctly at both widths, the hero title
+   wraps cleanly, no horizontal scroll anywhere, and the fixed UI never
+   collides with itself or content.
+   Two false alarms surfaced and were run to ground rather than "fixed" blind,
+   worth recording so a future session doesn't rediscover the same
+   red herrings:
+   - Instantly jumping to a room via Playwright's `scrollIntoViewIfNeeded()`
+     (a single-frame position change) intermittently left that room's
+     `ImageReveal` clip-path stuck at `inset(100%)` — i.e. never revealed —
+     specifically for the `split` layout. This does **not** reproduce with
+     realistic incremental scrolling (mouse-wheel steps, matching real
+     touch/trackpad behavior): confirmed clean across every layout at both
+     widths once the test scrolled gradually instead of teleporting. Root
+     cause is an interaction between Lenis's RAF-driven smooth-scroll and an
+     instantaneous native scroll jump, not application code — real users never
+     produce that input pattern. **Do not "fix" this by touching
+     `image-reveal.tsx` or the grid/order classes in `room-section.tsx`'s
+     `split` branch** — several structural variations (removing CSS `order`,
+     swapping DOM order, grid→flex, dropping `items-center`) were tried live
+     against the dev server and *none* of them mattered; only the scroll
+     method did.
+   - A small dark circular **"N" badge bottom-left** visible in every dev-mode
+     screenshot is Next.js 16's built-in dev-server DevTools indicator (no
+     `devIndicators` config exists in this repo to have added it deliberately)
+     — it only renders under `next dev`, not in a production build, and isn't
+     part of this site. It happens to sit near the secret-feather icon's own
+     bottom-left corner in dev screenshots; this is not a real collision.
+
+No component, layout, room content, or copy changed as a result of the QA
+pass — everything checked out.
+
 ## Pending / not yet done
 
-Nothing here is broken — these are the honest gaps left after Session 2, roughly in priority order:
+Nothing here is broken — these are the honest gaps left after Session 3, roughly in priority order:
 
-1. **Mobile responsiveness** — now spot-checked via Playwright screenshots at
-   375px (iPhone 13) this session (looks correct: hero, intro, nav pill, sound
-   toggle all sit properly), but not exhaustively verified across every room
-   layout variant (`full`/`wide`/`split`/`meta`) or on a real device.
-2. **No deploy target connected yet.** The repo is on GitHub
+1. **No deploy target connected yet.** The repo is on GitHub
    (`tiffinwaleofficial/my-dream-house`, `main` branch) but not yet imported
    into Vercel or any host. `@vercel/analytics` is already a dependency,
    suggesting Vercel was the intended target — importing the repo there would
    also solve the "does image optimization actually work in production"
    question for free (Vercel bundles `sharp`-equivalent infra automatically).
-3. **Raw/duplicate source images** sit in the parent folder
+2. **Raw/duplicate source images** sit in the parent folder
    (`D:\Personal Projects\My Dream Home\*.png` — e.g. "Warm Modern Kitchen with
    Marble Island.png", "Cozy Kitchen Herb Garden Window.png") one level above
    this repo. These were compared against `public/assets/home/*` and found to
@@ -288,14 +357,15 @@ Nothing here is broken — these are the honest gaps left after Session 2, rough
    superseded by the clean versions actually in use. Left untouched (not
    deleted — they're the user's files, not build artifacts), but they're not
    wired into the site and don't need to be.
-4. **No lint script / ESLint config** exists. Not blocking anything today
-   (`tsc --noEmit` and `next build` both pass clean), but worth adding if the
-   project keeps growing.
-5. The brief's item #31 mentions Three.js as an optional stretch for the house
+3. The brief's item #31 mentions Three.js as an optional stretch for the house
    map "only if it genuinely adds value" — current `house-map.tsx` is a clean
    CSS-grid architectural plan, which is the right call per the brief's own
    "don't build unnecessarily heavy 3D" guidance. Not a gap, just confirming
    the decision was deliberate, not skipped.
+4. Mobile/tablet QA (Session 3) was thorough but still browser-emulated, not a
+   real device. Nothing found suggests a real-device check would turn up
+   anything, but it's the last rung of the "verified" ladder that hasn't been
+   climbed.
 
 ## How to run it
 
@@ -305,6 +375,7 @@ corepack pnpm install       # first time / after pulling dependency changes
 npm run dev                 # http://localhost:3000
 npm run build && npm start  # production build/serve
 npx tsc --noEmit            # typecheck
+npm run lint                # ESLint
 ```
 
 ## Where things live (quick reference)
