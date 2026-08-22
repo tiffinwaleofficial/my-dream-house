@@ -14,6 +14,7 @@ import { HerCollage } from '@/components/her-collage'
 import { FinalExperience } from '@/components/final-experience'
 import { RoomNavigation } from '@/components/room-navigation'
 import { SecretFeather } from '@/components/secret-feather'
+import { AmbientSound } from '@/components/ambient-sound'
 
 export default function Page() {
   const [entered, setEntered] = useState(false)
@@ -24,6 +25,7 @@ export default function Page() {
       <IntroExperience onEnter={() => setEntered(true)} />
       <RoomNavigation visible={entered} />
       <SecretFeather visible={entered} />
+      <AmbientSound visible={entered} />
 
       <main className="bg-background">
         <HeroHouse />
