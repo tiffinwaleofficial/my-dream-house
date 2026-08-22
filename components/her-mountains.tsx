@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'motion/react'
 
@@ -8,20 +8,55 @@ const ease = [0.22, 1, 0.36, 1] as const
 
 export function HerMountains() {
   const ref = useRef<HTMLElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
   const scale = useTransform(scrollYProgress, [0, 1], [1.08, 1])
+
+  // Force playback the moment the video scrolls into view, rather than
+  // relying solely on the autoplay attribute — some mobile browsers only
+  // honor autoplay once the element is actually visible, and until then
+  // show a native play button on the poster frame.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.muted = true
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {})
+          }
+        })
+      },
+      { threshold: 0.1 },
+    )
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <section ref={ref} className="relative h-[110vh] w-full overflow-hidden">
       <motion.div style={{ scale }} className="absolute inset-0">
         <video
+          ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
           poster="/assets/riya/video/nepal-ropeway-poster.jpg"
           className="absolute inset-0 h-full w-full object-cover"
+          onEnded={(e) => {
+            // Belt-and-braces: if `loop` ever gets ignored, restart manually.
+            const v = e.currentTarget
+            v.currentTime = 0
+            v.play().catch(() => {})
+          }}
         >
+          <source src="/assets/riya/video/nepal-ropeway.webm" type="video/webm" />
           <source src="/assets/riya/video/nepal-ropeway.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-foreground/40" />
