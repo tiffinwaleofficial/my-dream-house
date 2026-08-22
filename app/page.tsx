@@ -11,6 +11,7 @@ import { HouseMap } from '@/components/house-map'
 import { RoomSection } from '@/components/room-section'
 import { SanskritTransition } from '@/components/sanskrit-transition'
 import { HerCollage } from '@/components/her-collage'
+import { HerParents } from '@/components/her-parents'
 import { FinalExperience } from '@/components/final-experience'
 import { RoomNavigation } from '@/components/room-navigation'
 import { SecretFeather } from '@/components/secret-feather'
@@ -42,6 +43,7 @@ export default function Page() {
         ))}
 
         <HerCollage />
+        <HerParents />
         <FinalExperience />
       </main>
     </SmoothScroll>

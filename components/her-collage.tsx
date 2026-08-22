@@ -101,12 +101,45 @@ export function HerCollage() {
           delay={0.1}
         />
         <CollagePhoto
-          src="/assets/riya/collage/her-recent.jpg"
-          alt="Riya today, smiling"
-          caption="Right now"
+          src="/assets/riya/collage/her-temple.jpg"
+          alt="Riya at the Krishna temple in Ahmedabad"
+          caption="Carrying her faith with her"
           aspect="aspect-[3/4]"
           className="col-span-2 md:col-span-4 md:col-start-9"
           delay={0.2}
+        />
+
+        <CollagePhoto
+          src="/assets/riya/collage/her-festive.jpg"
+          alt="Riya dressed up for a celebration"
+          caption="Dressed for joy"
+          aspect="aspect-[3/4]"
+          className="col-span-1 mt-10 md:col-span-5 md:col-start-2 md:mt-24"
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-closeup-pink.jpg"
+          alt="A quiet close-up portrait of Riya"
+          caption="A quiet kind of beautiful"
+          aspect="aspect-[3/4]"
+          className="col-span-1 md:col-span-3 md:col-start-8"
+          delay={0.1}
+        />
+        <CollagePhoto
+          src="/assets/riya/collage/her-closeup-gold.jpg"
+          alt="Riya, unhurried"
+          caption="Unhurried"
+          aspect="aspect-[3/4]"
+          className="col-span-2 mt-6 md:col-span-3 md:col-start-11 md:mt-16"
+          delay={0.2}
+        />
+
+        <CollagePhoto
+          src="/assets/riya/collage/her-recent.jpg"
+          alt="Riya today, smiling"
+          caption="Right now"
+          aspect="aspect-[4/5]"
+          className="col-span-2 mx-auto mt-16 w-full max-w-sm md:col-span-6 md:col-start-4 md:mt-28"
+          delay={0.1}
         />
       </div>
     </section>
