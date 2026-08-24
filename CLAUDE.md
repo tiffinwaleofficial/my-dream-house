@@ -57,6 +57,11 @@ app/
   layout.tsx        — root layout, Google Fonts (Cormorant Garamond, Inter, Noto Serif Devanagari), metadata
   page.tsx           — the entire single-page experience, composed from components below
   globals.css        — design tokens (colors, fonts) + Tailwind v4 theme wiring
+  icon.svg           — favicon (Next App Router auto-detects this filename): the peacock-feather
+                        eye motif (added Session 4, replacing the unused v0.app generator logo
+                        that was sitting in public/). Regenerate app/apple-icon.png from it via
+                        sharp at 180×180 if it ever changes.
+  apple-icon.png     — rasterized iOS touch icon (Apple doesn't reliably accept SVG here)
   home/              — `/home`: the 3D scroll-driven house tour (added Session 4).
                         `page.tsx` is a server component (metadata) that renders the
                         `house-tour-client.tsx` boundary, which `next/dynamic`-imports
@@ -461,6 +466,60 @@ requests at the end.
      and the progress-number pill collided on narrow viewports because the
      room-name label made the right pill too wide; fixed by hiding the
      descriptive label (keeping just "05 / 16") below the `md:` breakpoint.
+
+8. **The `/home` tour's first version looked like an art exhibition, not a
+   house** — floating walls with no ceiling, no sky, no sense of being
+   inside or outside anything. User feedback, same session. Fixed with a
+   real enclosure pass (still in `lib/house-tour-layout.ts` /
+   `components/house-tour/`):
+   - Every room bay now has a proper doorway (two jambs + a header, not an
+     open stage) and a ceiling. The entry got a real house facade — a
+     doorway, a pitched roof, a yard with a few low-poly neighbor houses
+     and trees, approached from a pulled-back establishing shot.
+   - **A ceiling alone did not fully enclose the corridor.** A per-bay
+     ceiling only covers that bay's own footprint — the walkway *between*
+     bays, and the wide-FOV periphery even inside a bay, could still see
+     past its edges to open sky. Two more pieces were needed: one
+     continuous corridor ceiling (`floorWidth * 3` wide, so no camera
+     angle from inside a room clears its edge) spanning the whole tour
+     except a gap left open on purpose right before the closing "her"
+     stop, *and* a plain outer perimeter wall well past every room's own
+     outer wall (`floorWidth / 2 + 3`) — a **level** sightline out of a
+     room past its wall's finite edge doesn't hit an overhead ceiling at
+     all, only a side wall stops it. If sky ever leaks back in, it's one
+     of these two.
+   - **`<Sky>` from `@react-three/drei`** (wraps `three-stdlib`'s Sky
+     shader) is fully procedural / real-time atmospheric scattering — no
+     texture, no network fetch (checked its source before using it,
+     since this environment blocks egress to asset hosts like
+     Sketchfab/Poly Pizza, which is where an actual downloadable 3D house
+     model would have had to come from — not available here). Tuned for
+     a clear daytime blue (`turbidity={2}`, `rayleigh={1.4}`), not the
+     default hazy/white-near-horizon look. `distance` must stay under the
+     Canvas camera's `far` (bumped to 700 here) or the sky sphere gets
+     near-clipped away.
+   - **Gable roof geometry is easy to get backwards.** A pitched panel's
+     *ridge axis* has to run parallel to the wall it's over (here, along
+     X, matching `BAY_WIDTH`) for the sloped surface to actually face an
+     approaching camera. Rotating around the wrong axis (Z, so the ridge
+     ran *into* the building instead) rendered the roof edge-on — a
+     paper-thin line instead of a visible pitched surface. If a roof ever
+     looks like a stick instead of a slab, this is why.
+   - Verified the same way as the camera-weave fix: incremental scroll
+     through the *entire* tour (not just the first couple of rooms) at
+     desktop and `devices['iPhone 13']`, screenshotting suspect rooms
+     specifically until the sky-leak was gone everywhere, not just at the
+     one spot it was first noticed.
+9. **Replaced the favicon.** `public/apple-icon.png`,
+   `icon-dark-32x32.png`, `icon-light-32x32.png`, and `icon.svg` were the
+   original Imagenative/v0.app generator's own "v0" logo, sitting unused
+   in `public/` (nothing referenced them, so Next's file-based icon
+   convention never picked them up either). Replaced with a real one at
+   `app/icon.svg` (Next's App Router auto-detects this) — a small SVG of
+   the peacock feather's eye motif on a teal-to-bronze gradient — plus a
+   rasterized `app/apple-icon.png` (180×180, via `sharp`) for iOS, since
+   Apple doesn't reliably accept SVG touch icons. Regenerate the PNG from
+   the SVG with `sharp` at 180×180 if `icon.svg` ever changes.
 
 ## Pending / not yet done
 
