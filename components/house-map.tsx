@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import Link from 'next/link'
 import { motion } from 'motion/react'
 import { roomIndex } from '@/lib/rooms'
 
@@ -56,6 +57,20 @@ export function HouseMap() {
         >
           Every room has a story.
         </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.9, ease, delay: 0.18 }}
+        >
+          <Link
+            href="/home"
+            data-cursor="hover"
+            className="label-caps mt-1 inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-peacock"
+          >
+            Walk through it in 3D <span aria-hidden>→</span>
+          </Link>
+        </motion.div>
       </div>
 
       <motion.div
