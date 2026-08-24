@@ -33,6 +33,11 @@ strong motif, not decoration spam.
 - **Next.js 16.3.0**, App Router, Turbopack, React 19, TypeScript 5.7
 - **Tailwind CSS v4** (`@import 'tailwindcss'` + `@theme inline` token mapping in `app/globals.css`, no `tailwind.config`)
 - **motion** (the current package name for Framer Motion) for all animation
+- **three** / **@react-three/fiber** / **@react-three/drei** (added Session 4) for
+  the 3D house tour at `/home` — see below. No HDRI/`<Environment>` or other
+  externally-fetched assets are used (this environment blocks egress to
+  general hosts) — lighting is all manual `ambientLight`/`directionalLight`/
+  `pointLight`, and textures are the same local room photos via `useTexture`.
 - **lenis** (`lenis/react`) for smooth scroll, auto-disabled under `prefers-reduced-motion`
 - **sharp** for Next.js image optimization (added Session 1 — see below)
 - **@vercel/analytics** (loads only in production builds)
@@ -52,7 +57,19 @@ app/
   layout.tsx        — root layout, Google Fonts (Cormorant Garamond, Inter, Noto Serif Devanagari), metadata
   page.tsx           — the entire single-page experience, composed from components below
   globals.css        — design tokens (colors, fonts) + Tailwind v4 theme wiring
+  home/              — `/home`: the 3D scroll-driven house tour (added Session 4).
+                        `page.tsx` is a server component (metadata) that renders the
+                        `house-tour-client.tsx` boundary, which `next/dynamic`-imports
+                        `components/house-tour/tour-experience.tsx` with `ssr: false`
+                        (WebGL needs a browser).
 components/
+  house-tour/        — the `/home` 3D tour, built on lib/house-tour-layout.ts (added Session 4):
+                        tour-experience.tsx (scroll spacer + Canvas + text panel + progress
+                        rail + prefers-reduced-motion fallback), scene.tsx (lights/fog/floor),
+                        camera-rig.tsx (damped scroll-driven camera along a Catmull-Rom path),
+                        room-bay.tsx (one room's walls + photo panel + furniture),
+                        photo-panel.tsx (aspect-fit framed photo), furniture-mesh.tsx (generic
+                        primitive renderer for the declarative furniture data).
   intro-experience.tsx  — first-load overlay: peacock feather → श्री राधे → title → "Come inside"
   hero-house.tsx         — "01 — Arrival" parallax hero (exterior shot)
   story-section.tsx      — philosophy/mission statement block
@@ -71,8 +88,14 @@ components/
   peacock-feather.tsx      — the one SVG peacock-feather motif, reused everywhere
   ui/button.tsx             — shadcn-style base button (barely used; most UI is bespoke)
 lib/
-  rooms.ts    — ⭐ single source of truth for the house tour: `Room[]` array + `roomIndex`.
-                Add/reorder/edit rooms here; app/page.tsx just maps over `rooms`.
+  rooms.ts              — ⭐ single source of truth for the house tour: `Room[]` array + `roomIndex`.
+                          Add/reorder/edit rooms here; app/page.tsx just maps over `rooms`.
+  house-tour-layout.ts  — derives the `/home` 3D tour entirely from `rooms` (added Session 4):
+                          per-room bay geometry/position, hand-authored furniture primitives
+                          keyed by room id, and the camera's Catmull-Rom waypoint path. Editing
+                          a room in `rooms.ts` (title/subtitle/image/meta) automatically flows
+                          through to the 3D tour's text panel — only furniture/geometry needs
+                          separate edits here.
   utils.ts    — `cn()` classname helper
 public/
   assets/home/    — 16 room photographs (PNG), see room order below
@@ -338,6 +361,107 @@ Two items from the Pending list below, done in order.
 No component, layout, room content, or copy changed as a result of the QA
 pass — everything checked out.
 
+### Session 4 (2026-08-24) — video/autoplay fixes, feather redraw, loading polish, easter egg, mobile nudge, 3D tour
+
+A long session, mostly driven by live device testing (the user checking the
+site on a real phone via WhatsApp's in-app browser) plus two large feature
+requests at the end.
+
+1. **`her-mountains.tsx` video** (Nepal zipline footage): fixed twice.
+   First pass added an `IntersectionObserver`-driven `video.play()` call,
+   `controls={false}`, `disablePictureInPicture`, an `onEnded` manual-restart
+   loop fallback, and a VP9/WebM `<source>` before the MP4 (re-encoded the MP4
+   itself at higher quality via `ffmpeg`: `libx264 high profile, crf 17,
+   +faststart`, plus a VP9 `crf 24` webm and a new poster frame). Real-device
+   testing over WhatsApp's in-app browser then showed the play button *still*
+   appearing — root cause: WhatsApp's WKWebView requires `video.play()` to be
+   called synchronously inside a genuine user-gesture handler; an
+   `IntersectionObserver` callback doesn't qualify even though it fires from
+   scrolling. Fixed by catching the `play()` rejection and retrying via a
+   one-time `pointerdown`/`touchstart`/`wheel`/`keydown` listener — the same
+   gesture-retry pattern `ambient-sound.tsx` already used for autoplay.
+2. **`public/assets/riya/parents.jpg`** swapped for a new user-provided photo
+   (same filename, so `her-parents.tsx` needed no code changes).
+3. **`peacock-feather.tsx` redrawn** with anatomically closer nested
+   teardrop-band ocelli (bronze rim → iridescent band → green-gold band →
+   glossy core, via `color-mix()` off the existing 3 design tokens) and a
+   denser two-layer barb fan. The user explicitly asked for a real SVG to be
+   found and downloaded online instead — confirmed **not possible in this
+   environment**: outbound fetches to pixabay.com, commons.wikimedia.org,
+   freesvg.org, openclipart.org, upload.wikimedia.org, and a
+   user-provided magnific.com URL all returned `EGRESS_BLOCKED` (this sandbox
+   only allowlists package registries and Anthropic's own infra). Redrawing
+   by hand was the fallback, communicated honestly rather than silently
+   substituted.
+4. **Loading polish** — `lib/blur-placeholders.ts` (auto-generated, do not
+   hand-edit) holds tiny base64 blurred JPEG previews for all 37 real images
+   on the site, generated via `sharp(file).resize(16,16,{fit:'inside'}).blur().jpeg({quality:40})`.
+   Wired into every `<Image>` call across `image-reveal.tsx`,
+   `riya-portrait.tsx`, `her-collage.tsx`, `her-parents.tsx`, and
+   `her-mountains.tsx`'s `HerMountainMoments` via
+   `placeholder={blurPlaceholders[src] ? 'blur' : 'empty'}`. Regenerate by
+   re-running that resize/blur pass over the same 37 paths if images change.
+5. **Time-of-day easter egg** — `secret-feather.tsx`'s modal now picks one of
+   five closing-line variants based on `new Date().getHours()` at the moment
+   the feather is clicked (not on mount, so it can't go stale on a long visit).
+6. **Mobile audio nudge** — `ambient-sound.tsx` shows a small "tap for sound"
+   pill near the sound toggle, once, ~1.4s after entry, for first-time
+   visitors only (`localStorage['house-sound-nudge-seen']`), auto-hiding
+   after 5s or on any interaction with the toggle. Exists because several
+   mobile browsers (WhatsApp's included) block audio autoplay outright until
+   a real tap, and the toggle was otherwise easy to miss.
+7. **The `/home` 3D tour** (see Repo layout above for the file list) — the
+   big addition. A few things worth knowing before touching it:
+   - It is **not** a literal reconstruction — there's no CAD model or 3D scan
+     of the real house, only the 16 flat photographs already in
+     `public/assets/home/`. The user was offered three honest options
+     (stylized architectural flythrough / 2.5D parallax / abstract
+     particle journey) and chose the stylized flythrough — real photos
+     mounted as framed panels inside a simple low-poly corridor, not an
+     attempt at photorealism.
+   - **Camera tuning is the fragile part.** The first version used a
+     lateral "weave" factor of `0.38× offsetX` to swing the camera toward
+     each room; this caused the Catmull-Rom curve's natural overshoot on
+     the alternating left/right zig-zag to occasionally swing the camera
+     *through* a bay's side wall, producing a blank/close-up-clipped canvas
+     deep into the scroll (only surfaced by actually scrolling all the way
+     through in Playwright, not from a single entry screenshot). Fixed by
+     dropping the weave factor to `0.12×` — comfortably inside the corridor
+     half-width so the camera can never reach a wall — and dialing the
+     look-at swing back from `0.9×` to `0.75×`. If the camera ever looks
+     "stuck" or the canvas goes blank partway through the tour, check these
+     two constants in `buildCameraPath()` (`lib/house-tour-layout.ts`)
+     first, and verify by scrolling incrementally through the *entire*
+     tour, not just the first couple of rooms.
+   - **The text panel needs `AnimatePresence` without `mode="wait"`.** With
+     `mode="wait"`, rapid scroll-driven key changes (each room = a new
+     `key={stop.id}`) can starve the queue — the visible pill counter keeps
+     updating (it's not inside `AnimatePresence`) while the animated title/
+     subtitle card gets stuck showing a stale room. Default (overlapping)
+     mode fixed it.
+   - `useTexture`'s returned texture can't be mutated directly in the
+     component body (`texture.colorSpace = ...`) — the newer
+     `react-hooks/immutability` lint rule (bundled in `eslint-config-next`
+     16.x's `react-hooks` recommended config) flags it. Set it inside
+     `useTexture`'s own `onLoad` callback instead (see `photo-panel.tsx`).
+   - No `<Environment>`/HDRI or other drei loaders that fetch external
+     assets — this environment blocks that egress, and there's no
+     guarantee the deployed site would want an external CDN dependency
+     either. Lighting is entirely local (`ambientLight` + `directionalLight`
+     + per-bay `pointLight`).
+   - Respects `prefers-reduced-motion` with a full static fallback (no
+     Canvas mounted at all) linking back to the classic tour — a first-
+     person scroll flythrough is exactly the kind of motion a visitor who's
+     opted out of motion shouldn't be forced through.
+   - Verified via Playwright at desktop (1440px) and `devices['iPhone 13']`:
+     a full incremental scroll through all 16 stops with no console errors,
+     no horizontal overflow, the reduced-motion fallback, and — after the
+     camera-weave fix — no blank/clipped frames anywhere in the tour. One
+     mobile-only bug found and fixed in the same pass: the back-link pill
+     and the progress-number pill collided on narrow viewports because the
+     room-name label made the right pill too wide; fixed by hiding the
+     descriptive label (keeping just "05 / 16") below the `md:` breakpoint.
+
 ## Pending / not yet done
 
 Nothing here is broken — these are the honest gaps left after Session 3, roughly in priority order:
@@ -357,11 +481,12 @@ Nothing here is broken — these are the honest gaps left after Session 3, rough
    superseded by the clean versions actually in use. Left untouched (not
    deleted — they're the user's files, not build artifacts), but they're not
    wired into the site and don't need to be.
-3. The brief's item #31 mentions Three.js as an optional stretch for the house
-   map "only if it genuinely adds value" — current `house-map.tsx` is a clean
-   CSS-grid architectural plan, which is the right call per the brief's own
-   "don't build unnecessarily heavy 3D" guidance. Not a gap, just confirming
-   the decision was deliberate, not skipped.
+3. ~~The brief's item #31 mentions Three.js as an optional stretch for the
+   house map~~ — **done in Session 4**: `house-map.tsx` itself stayed the clean
+   CSS-grid plan it was (still the right call for that specific component),
+   but a full Three.js scroll-driven 3D walkthrough now lives at `/home`,
+   linked from the house-map section. See the Session 4 log below and
+   `lib/house-tour-layout.ts`.
 4. Mobile/tablet QA (Session 3) was thorough but still browser-emulated, not a
    real device. Nothing found suggests a real-device check would turn up
    anything, but it's the last rung of the "verified" ladder that hasn't been
