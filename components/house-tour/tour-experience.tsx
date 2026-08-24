@@ -61,7 +61,7 @@ export function TourExperience() {
         <Canvas
           dpr={[1, 1.5]}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
-          camera={{ fov: 55, near: 0.1, far: 120, position: [0, 1.6, 6] }}
+          camera={{ fov: 55, near: 0.1, far: 700, position: [0, 1.6, 6] }}
         >
           <Scene progress={scrollYProgress} />
         </Canvas>

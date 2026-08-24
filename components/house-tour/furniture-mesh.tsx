@@ -6,7 +6,9 @@ import type { FurniturePiece } from '@/lib/house-tour-layout'
 export function FurnitureMesh({ piece, mirror }: { piece: FurniturePiece; mirror: 1 | -1 }) {
   const [x, y, z] = piece.position
   const position: [number, number, number] = [x * mirror, y, z]
+  const rotationX = piece.rotationX ?? 0
   const rotationY = piece.rotationY ?? 0
+  const rotationZ = (piece.rotationZ ?? 0) * mirror
 
   const materialProps = {
     color: piece.color,
@@ -18,7 +20,7 @@ export function FurnitureMesh({ piece, mirror }: { piece: FurniturePiece; mirror
 
   if (piece.shape === 'box') {
     return (
-      <mesh position={position} rotation={[0, rotationY, 0]} castShadow={false}>
+      <mesh position={position} rotation={[rotationX, rotationY, rotationZ]} castShadow={false}>
         <boxGeometry args={piece.size} />
         <meshStandardMaterial {...materialProps} />
       </mesh>

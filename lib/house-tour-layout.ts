@@ -12,6 +12,9 @@ export const CORRIDOR_HALF_WIDTH = 1.6
 export const STOP_SPACING = 6.8
 export const EYE_HEIGHT = 1.6
 export const WALL_THICKNESS = 0.14
+export const DOOR_WIDTH = 1.9
+export const DOOR_HEIGHT = 2.35
+export const CEILING_THICKNESS = 0.12
 
 export type Orientation = 'left' | 'right' | 'forward'
 
@@ -21,12 +24,36 @@ export type FurniturePiece = {
   position: [number, number, number]
   size: [number, number, number]
   color: string
+  rotationX?: number
   rotationY?: number
+  rotationZ?: number
   metalness?: number
   roughness?: number
   emissive?: string
   emissiveIntensity?: number
 }
+
+/** Simple abstract neighbor-house / tree props scattered around the entry yard — not the house itself. */
+export const NEIGHBORHOOD_PROPS: FurniturePiece[] = [
+  // a distant neighbor house, left
+  { shape: 'box', position: [-8.5, 1.1, 5.5], size: [3, 2.2, 3], color: '#ded2bd' },
+  { shape: 'box', position: [-8.5, 2.55, 5.5], size: [2.3, 1.5, 2.3], rotationY: Math.PI / 4, color: '#a9714f' },
+  // a distant neighbor house, right
+  { shape: 'box', position: [8, 0.95, 6.5], size: [2.6, 1.9, 2.6], color: '#e2d6c4' },
+  { shape: 'box', position: [8, 2.2, 6.5], size: [2, 1.3, 2], rotationY: Math.PI / 4, color: '#8f6446' },
+  // a smaller, further one, right
+  { shape: 'box', position: [11, 0.75, 2], size: [2, 1.5, 2], color: '#d8cbb6' },
+  { shape: 'box', position: [11, 1.85, 2], size: [1.55, 1, 1.55], rotationY: Math.PI / 4, color: '#7f947a' },
+  // trees dotted through the yard
+  { shape: 'cylinder', position: [-4.2, 0.5, 4.2], size: [0.1, 0.13, 1], color: '#6b4f34' },
+  { shape: 'sphere', position: [-4.2, 1.3, 4.2], size: [0.75, 0.75, 0.75], color: '#7f947a' },
+  { shape: 'cylinder', position: [4.6, 0.45, 3.6], size: [0.09, 0.12, 0.9], color: '#6b4f34' },
+  { shape: 'sphere', position: [4.6, 1.15, 3.6], size: [0.65, 0.65, 0.65], color: '#89a082' },
+  { shape: 'cylinder', position: [-6, 0.4, 1.5], size: [0.08, 0.1, 0.8], color: '#6b4f34' },
+  { shape: 'sphere', position: [-6, 1.0, 1.5], size: [0.55, 0.55, 0.55], color: '#7f947a' },
+  { shape: 'cylinder', position: [6.5, 0.4, 0.8], size: [0.08, 0.1, 0.8], color: '#6b4f34' },
+  { shape: 'sphere', position: [6.5, 1.0, 0.8], size: [0.55, 0.55, 0.55], color: '#89a082' },
+]
 
 export type TourStop = {
   id: string
@@ -272,9 +299,9 @@ export function buildCameraPath(stops: TourStop[]): CameraPath {
   const positions: THREE.Vector3[] = []
   const targets: THREE.Vector3[] = []
 
-  // lead-in, outside the front door
-  positions.push(new THREE.Vector3(0, EYE_HEIGHT, STOP_SPACING * 0.7))
-  targets.push(new THREE.Vector3(0, EYE_HEIGHT, 0))
+  // lead-in, standing in the yard for a full establishing view of the house — facade, roof and sky
+  positions.push(new THREE.Vector3(0, EYE_HEIGHT + 0.3, STOP_SPACING * 2.1))
+  targets.push(new THREE.Vector3(0, BAY_HEIGHT * 0.55, STOP_SPACING * 0.5))
 
   stops.forEach((stop) => {
     // kept small and well inside the corridor half-width so the curve's natural
