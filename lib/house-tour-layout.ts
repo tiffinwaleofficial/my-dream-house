@@ -15,6 +15,13 @@ export const WALL_THICKNESS = 0.14
 export const DOOR_WIDTH = 1.9
 export const DOOR_HEIGHT = 2.35
 export const CEILING_THICKNESS = 0.12
+export const WINDOW_WIDTH = 2.1
+export const WINDOW_HEIGHT = 1.45
+export const WINDOW_SILL = 0.95
+
+// Exterior roof over the entry facade
+export const ROOF_RISE = 2.45
+export const ROOF_OVERHANG = 0.7
 
 export type Orientation = 'left' | 'right' | 'forward'
 
@@ -34,16 +41,42 @@ export type FurniturePiece = {
 }
 
 /** Simple abstract neighbor-house / tree props scattered around the entry yard — not the house itself. */
+/** A neighbouring house: a body plus two pitched roof panels forming a gable. */
+function neighbourHouse(
+  x: number,
+  z: number,
+  width: number,
+  height: number,
+  bodyColor: string,
+  roofColor: string,
+): FurniturePiece[] {
+  const rise = width * 0.42
+  const run = width / 2 + 0.22
+  const pitch = Math.atan2(rise, run)
+  const slope = Math.hypot(run, rise)
+  return [
+    { shape: 'box', position: [x, height / 2, z], size: [width, height, width], color: bodyColor },
+    {
+      shape: 'box',
+      position: [x - run / 2, height + rise / 2, z],
+      size: [slope, 0.12, width + 0.44],
+      rotationZ: pitch,
+      color: roofColor,
+    },
+    {
+      shape: 'box',
+      position: [x + run / 2, height + rise / 2, z],
+      size: [slope, 0.12, width + 0.44],
+      rotationZ: -pitch,
+      color: roofColor,
+    },
+  ]
+}
+
 export const NEIGHBORHOOD_PROPS: FurniturePiece[] = [
-  // a distant neighbor house, left
-  { shape: 'box', position: [-8.5, 1.1, 5.5], size: [3, 2.2, 3], color: '#ded2bd' },
-  { shape: 'box', position: [-8.5, 2.55, 5.5], size: [2.3, 1.5, 2.3], rotationY: Math.PI / 4, color: '#a9714f' },
-  // a distant neighbor house, right
-  { shape: 'box', position: [8, 0.95, 6.5], size: [2.6, 1.9, 2.6], color: '#e2d6c4' },
-  { shape: 'box', position: [8, 2.2, 6.5], size: [2, 1.3, 2], rotationY: Math.PI / 4, color: '#8f6446' },
-  // a smaller, further one, right
-  { shape: 'box', position: [11, 0.75, 2], size: [2, 1.5, 2], color: '#d8cbb6' },
-  { shape: 'box', position: [11, 1.85, 2], size: [1.55, 1, 1.55], rotationY: Math.PI / 4, color: '#7f947a' },
+  ...neighbourHouse(-8.5, 5.5, 3, 2.2, '#ded2bd', '#a9714f'),
+  ...neighbourHouse(8, 6.5, 2.8, 1.9, '#e2d6c4', '#8f6446'),
+  ...neighbourHouse(11, 2, 2, 1.5, '#d8cbb6', '#7c5a3f'),
   // trees dotted through the yard
   { shape: 'cylinder', position: [-4.2, 0.5, 4.2], size: [0.1, 0.13, 1], color: '#6b4f34' },
   { shape: 'sphere', position: [-4.2, 1.3, 4.2], size: [0.75, 0.75, 0.75], color: '#7f947a' },
@@ -122,27 +155,28 @@ const roomFurniture: Record<string, FurniturePiece[]> = {
     { shape: 'box', position: [0.8, 0.16, 0.6], size: [0.6, 0.32, 0.3], color: WOOD_DARK },
   ],
   library: [
-    { shape: 'box', position: [1.85, 1.2, 0], size: [0.35, 2.3, 1.8], color: WOOD },
-    { shape: 'box', position: [1.72, 1.9, -0.6], size: [0.14, 0.35, 0.3], color: PEACOCK },
-    { shape: 'box', position: [1.72, 1.9, -0.15], size: [0.14, 0.35, 0.3], color: WOOD_DARK },
-    { shape: 'box', position: [1.72, 1.9, 0.3], size: [0.14, 0.35, 0.3], color: GREEN },
-    { shape: 'box', position: [1.72, 1.9, 0.75], size: [0.14, 0.35, 0.3], color: SAND },
+    // against the far wall: the outer wall is where the framed photo hangs
+    { shape: 'box', position: [-1.15, 1.2, -1.95], size: [1.8, 2.3, 0.35], color: WOOD },
+    { shape: 'box', position: [-1.75, 1.9, -1.82], size: [0.3, 0.35, 0.14], color: PEACOCK },
+    { shape: 'box', position: [-1.3, 1.9, -1.82], size: [0.3, 0.35, 0.14], color: WOOD_DARK },
+    { shape: 'box', position: [-0.85, 1.9, -1.82], size: [0.3, 0.35, 0.14], color: GREEN },
+    { shape: 'box', position: [-0.4, 1.9, -1.82], size: [0.3, 0.35, 0.14], color: SAND },
     { shape: 'box', position: [0.9, 0.25, -1.15], size: [0.6, 0.5, 0.6], color: LINEN },
   ],
   kitchen: [
     { shape: 'box', position: [0.95, 0.25, 0], size: [1.55, 0.5, 0.8], color: CREAM },
-    { shape: 'box', position: [1.85, 0.9, -1.55], size: [0.5, 1.75, 0.4], color: WOOD },
+    { shape: 'box', position: [-1.4, 0.9, -1.95], size: [0.5, 1.75, 0.4], color: WOOD },
   ],
   herb: [
-    { shape: 'box', position: [1.9, 0.85, 0], size: [0.25, 0.1, 1.95], color: WOOD },
-    { shape: 'cylinder', position: [1.9, 0.95, -0.85], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
-    { shape: 'sphere', position: [1.9, 1.08, -0.85], size: [0.13, 0.13, 0.13], color: GREEN },
-    { shape: 'cylinder', position: [1.9, 0.95, -0.28], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
-    { shape: 'sphere', position: [1.9, 1.08, -0.28], size: [0.13, 0.13, 0.13], color: GREEN },
-    { shape: 'cylinder', position: [1.9, 0.95, 0.28], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
-    { shape: 'sphere', position: [1.9, 1.08, 0.28], size: [0.13, 0.13, 0.13], color: GREEN },
-    { shape: 'cylinder', position: [1.9, 0.95, 0.85], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
-    { shape: 'sphere', position: [1.9, 1.08, 0.85], size: [0.13, 0.13, 0.13], color: GREEN },
+    { shape: 'box', position: [0, 0.85, -1.92], size: [1.95, 0.1, 0.25], color: WOOD },
+    { shape: 'cylinder', position: [-0.85, 0.95, -1.92], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
+    { shape: 'sphere', position: [-0.85, 1.08, -1.92], size: [0.13, 0.13, 0.13], color: GREEN },
+    { shape: 'cylinder', position: [-0.28, 0.95, -1.92], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
+    { shape: 'sphere', position: [-0.28, 1.08, -1.92], size: [0.13, 0.13, 0.13], color: GREEN },
+    { shape: 'cylinder', position: [0.28, 0.95, -1.92], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
+    { shape: 'sphere', position: [0.28, 1.08, -1.92], size: [0.13, 0.13, 0.13], color: GREEN },
+    { shape: 'cylinder', position: [0.85, 0.95, -1.92], size: [0.1, 0.1, 0.18], color: TERRACOTTA },
+    { shape: 'sphere', position: [0.85, 1.08, -1.92], size: [0.13, 0.13, 0.13], color: GREEN },
   ],
   dining: [
     { shape: 'box', position: [1.2, 0.25, 0], size: [1.5, 0.5, 0.95], color: WOOD },
@@ -171,11 +205,11 @@ const roomFurniture: Record<string, FurniturePiece[]> = {
     { shape: 'sphere', position: [1.75, 0.62, -1.6], size: [0.3, 0.3, 0.3], color: GREEN },
   ],
   wardrobe: [
-    { shape: 'box', position: [1.9, 1.3, 0], size: [0.4, 2.55, 2.2], color: WOOD },
+    { shape: 'box', position: [-0.9, 1.3, -1.95], size: [2.2, 2.55, 0.4], color: WOOD },
     {
       shape: 'box',
-      position: [0.85, 1.1, -1.65],
-      size: [0.04, 1.7, 0.65],
+      position: [1.0, 1.1, 1.9],
+      size: [0.65, 1.7, 0.04],
       color: '#cfd6d6',
       metalness: 0.6,
       roughness: 0.15,
@@ -282,11 +316,95 @@ export const TOUR_STOPS = buildTourStops()
 export const TOTAL_LENGTH = TOUR_STOPS[TOUR_STOPS.length - 1].centerZ - STOP_SPACING
 export const NUM_STOPS = TOUR_STOPS.length
 
-/** Approximate mapping from 0..1 scroll progress to the nearest tour stop, for the text panel. */
+/**
+ * Where each stop sits along the camera path, as a 0..1 fraction of scroll.
+ *
+ * `getPointAt` walks the curve by *arc length*, not by waypoint index, and the
+ * lead-in from out in the yard is far longer than a normal room-to-room hop.
+ * Assuming evenly spaced waypoints therefore drifts the caption out of sync
+ * with what the camera is actually looking at, so the panel and the camera
+ * both have to read from this same arc-length mapping.
+ */
+let cachedStopProgress: number[] | null = null
+
+export function stopProgressPoints(): number[] {
+  if (cachedStopProgress) return cachedStopProgress
+  const { positionCurve } = buildCameraPath(TOUR_STOPS)
+  const divisions = 1200
+  const lengths = positionCurve.getLengths(divisions)
+  const total = lengths[lengths.length - 1]
+  const pointCount = NUM_STOPS + 2 // lead-in + stops + lead-out
+
+  cachedStopProgress = TOUR_STOPS.map((_, i) => {
+    // waypoint i+1 in curve parameter space (index 0 is the lead-in)
+    const t = (i + 1) / (pointCount - 1)
+    const pos = t * divisions
+    const lo = Math.floor(pos)
+    const hi = Math.min(lo + 1, divisions)
+    const frac = pos - lo
+    const len = lengths[lo] + (lengths[hi] - lengths[lo]) * frac
+    return total > 0 ? len / total : 0
+  })
+  return cachedStopProgress
+}
+
+/** Maps 0..1 scroll progress to the stop the camera is nearest to. */
 export function stopIndexFromProgress(t: number): number {
-  const totalPoints = NUM_STOPS + 2 // includes the lead-in / lead-out buffer waypoints
-  const raw = t * (totalPoints - 1) - 1
-  return THREE.MathUtils.clamp(Math.round(raw), 0, NUM_STOPS - 1)
+  const points = stopProgressPoints()
+  let best = 0
+  let bestDist = Infinity
+  for (let i = 0; i < points.length; i++) {
+    const d = Math.abs(points[i] - t)
+    if (d < bestDist) {
+      bestDist = d
+      best = i
+    }
+  }
+  return best
+}
+
+/**
+ * The corridor is bounded by each room's own doorway wall wherever a room sits,
+ * but the stretches *between* rooms need their own wall or the hallway leaks
+ * open to the sky. Returns the gap segments for one side of the corridor.
+ */
+export function corridorFillerSegments(side: 1 | -1): { centerZ: number; length: number }[] {
+  const occupied = TOUR_STOPS.filter((s) => s.sideSign === side)
+    .map((s) => ({ start: s.centerZ + BAY_DEPTH / 2, end: s.centerZ - BAY_DEPTH / 2 }))
+    // walking down -Z, so sort from the entry end outward
+    .sort((a, b) => b.start - a.start)
+
+  const corridorStart = -BAY_DEPTH / 2
+  const corridorEnd = TOUR_STOPS[TOUR_STOPS.length - 1].centerZ + BAY_DEPTH / 2
+
+  const segments: { centerZ: number; length: number }[] = []
+  let cursor = corridorStart
+  for (const room of occupied) {
+    if (room.start < cursor) {
+      const length = cursor - room.start
+      if (length > 0.01) segments.push({ centerZ: (cursor + room.start) / 2, length })
+    }
+    cursor = Math.min(cursor, room.end)
+  }
+  if (cursor > corridorEnd) {
+    segments.push({ centerZ: (cursor + corridorEnd) / 2, length: cursor - corridorEnd })
+  }
+  return segments
+}
+
+/**
+ * The point the camera should be looking at when it is standing at a given
+ * stop — the framed photo on the wall opposite that room's door.
+ */
+export function stopLookPoint(stop: TourStop): THREE.Vector3 {
+  if (stop.sideSign === 0) {
+    return new THREE.Vector3(0, BAY_HEIGHT * 0.5, stop.centerZ - BAY_DEPTH / 2)
+  }
+  return new THREE.Vector3(
+    stop.offsetX + stop.sideSign * (BAY_WIDTH / 2 - 0.2),
+    BAY_HEIGHT * 0.5 + 0.1,
+    stop.centerZ,
+  )
 }
 
 export type CameraPath = {
@@ -299,14 +417,15 @@ export function buildCameraPath(stops: TourStop[]): CameraPath {
   const positions: THREE.Vector3[] = []
   const targets: THREE.Vector3[] = []
 
-  // lead-in, standing in the yard for a full establishing view of the house — facade, roof and sky
-  positions.push(new THREE.Vector3(0, EYE_HEIGHT + 0.3, STOP_SPACING * 2.1))
-  targets.push(new THREE.Vector3(0, BAY_HEIGHT * 0.55, STOP_SPACING * 0.5))
+  // lead-in: standing out on the grass, far enough back and slightly off-axis
+  // to take in the whole house — gable, roof, front door and yard
+  positions.push(new THREE.Vector3(2.4, EYE_HEIGHT + 0.75, STOP_SPACING * 2.35))
+  targets.push(new THREE.Vector3(0, BAY_HEIGHT * 0.95, BAY_DEPTH / 2))
 
   stops.forEach((stop) => {
     // kept small and well inside the corridor half-width so the curve's natural
     // overshoot on alternating left/right stops never swings the camera into a wall
-    const weave = stop.sideSign !== 0 ? stop.offsetX * 0.12 : 0
+    const weave = stop.sideSign !== 0 ? stop.offsetX * 0.2 : 0
     positions.push(new THREE.Vector3(weave, EYE_HEIGHT, stop.centerZ))
 
     const panelX = stop.sideSign !== 0 ? stop.sideSign * (BAY_WIDTH / 2 - 0.3) + stop.offsetX : 0

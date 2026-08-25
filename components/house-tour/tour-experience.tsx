@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
+import { EffectComposer, SSAO, Bloom, Vignette } from '@react-three/postprocessing'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
 import { NUM_STOPS, TOUR_STOPS, stopIndexFromProgress } from '@/lib/house-tour-layout'
 import { Scene } from './scene'
@@ -12,6 +14,7 @@ const VH_PER_STOP = 110
 
 export function TourExperience() {
   const [reduced, setReduced] = useState<boolean | null>(null)
+  const [richEffects, setRichEffects] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const activeIndexRef = useRef(0)
 
@@ -32,6 +35,14 @@ export function TourExperience() {
     update()
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    // a fine pointer and a few cores is a decent proxy for "has a real GPU"
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    const cores = navigator.hardwareConcurrency ?? 4
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRichEffects(finePointer && cores >= 4)
   }, [])
 
   if (reduced === null) return null
@@ -59,11 +70,40 @@ export function TourExperience() {
 
       <div className="fixed inset-0">
         <Canvas
-          dpr={[1, 1.5]}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
-          camera={{ fov: 55, near: 0.1, far: 700, position: [0, 1.6, 6] }}
+          shadows
+          dpr={[1, 1.75]}
+          gl={{
+            antialias: true,
+            powerPreference: 'high-performance',
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.05,
+          }}
+          camera={{ fov: 58, near: 0.1, far: 700, position: [0, 1.6, 12] }}
         >
-          <Scene progress={scrollYProgress} />
+          <Scene progress={scrollYProgress} activeIndex={activeIndex} />
+          {/* SSAO needs an extra full-screen normal pass and is heavily
+              fragment-bound, so it's reserved for devices likely to have a
+              real GPU; phones still get bloom and vignette. */}
+          {richEffects ? (
+            <EffectComposer enableNormalPass multisampling={0}>
+              <SSAO
+                intensity={20}
+                radius={0.13}
+                luminanceInfluence={0.5}
+                worldDistanceThreshold={24}
+                worldDistanceFalloff={6}
+                worldProximityThreshold={6}
+                worldProximityFalloff={2}
+              />
+              <Bloom intensity={0.4} luminanceThreshold={0.75} luminanceSmoothing={0.28} mipmapBlur />
+              <Vignette offset={0.3} darkness={0.4} />
+            </EffectComposer>
+          ) : (
+            <EffectComposer multisampling={0}>
+              <Bloom intensity={0.38} luminanceThreshold={0.75} luminanceSmoothing={0.28} mipmapBlur />
+              <Vignette offset={0.3} darkness={0.4} />
+            </EffectComposer>
+          )}
         </Canvas>
 
         <div

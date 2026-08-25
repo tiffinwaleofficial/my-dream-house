@@ -20,7 +20,7 @@ export function FurnitureMesh({ piece, mirror }: { piece: FurniturePiece; mirror
 
   if (piece.shape === 'box') {
     return (
-      <mesh position={position} rotation={[rotationX, rotationY, rotationZ]} castShadow={false}>
+      <mesh position={position} rotation={[rotationX, rotationY, rotationZ]} castShadow receiveShadow>
         <boxGeometry args={piece.size} />
         <meshStandardMaterial {...materialProps} />
       </mesh>
@@ -30,8 +30,8 @@ export function FurnitureMesh({ piece, mirror }: { piece: FurniturePiece; mirror
   if (piece.shape === 'cylinder') {
     const [rTop, rBottom, height] = piece.size
     return (
-      <mesh position={position} rotation={[0, rotationY, 0]}>
-        <cylinderGeometry args={[rTop, rBottom, height, 16]} />
+      <mesh position={position} rotation={[0, rotationY, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[rTop, rBottom, height, 20]} />
         <meshStandardMaterial {...materialProps} />
       </mesh>
     )
@@ -39,8 +39,8 @@ export function FurnitureMesh({ piece, mirror }: { piece: FurniturePiece; mirror
 
   const [radius] = piece.size
   return (
-    <mesh position={position}>
-      <sphereGeometry args={[radius, 16, 16]} />
+    <mesh position={position} castShadow receiveShadow>
+      <sphereGeometry args={[radius, 20, 20]} />
       <meshStandardMaterial {...materialProps} />
     </mesh>
   )

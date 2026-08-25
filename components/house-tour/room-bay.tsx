@@ -9,115 +9,157 @@ import {
   DOOR_WIDTH,
   DOOR_HEIGHT,
   CEILING_THICKNESS,
+  WINDOW_WIDTH,
+  WINDOW_HEIGHT,
+  WINDOW_SILL,
   type TourStop,
 } from '@/lib/house-tour-layout'
 import { FurnitureMesh } from './furniture-mesh'
 import { PhotoPanel } from './photo-panel'
+import { Wall, Baseboard, CrownMolding, DoorUnit, WindowUnit } from './architecture'
+import { useWoodFloorTexture } from './textures'
 
-const ROOF_RISE = 1.05
-const ROOF_RUN = 1.5
-const ROOF_PITCH = Math.atan2(ROOF_RISE, ROOF_RUN)
-const ROOF_SLOPE_LEN = Math.hypot(ROOF_RISE, ROOF_RUN)
-const ROOF_WIDTH = BAY_WIDTH + 0.6
+const TRIM = '#faf7f1'
 
-export function RoomBay({ stop }: { stop: TourStop }) {
+/**
+ * One room of the house: four walls, a ceiling, a finished floor, a real
+ * cased door standing open onto the corridor, and a window to the outside.
+ *
+ * The camera views this from the corridor through the doorway, so the photo
+ * panel goes on the wall opposite the door (the one you look straight at),
+ * and the window goes on the far wall where it side-lights the room and
+ * shows sky without competing with the photo.
+ */
+export function RoomBay({ stop, lit }: { stop: TourStop; lit: boolean }) {
   const isSide = stop.orientation !== 'forward'
-  const isEntry = stop.id === 'entry'
   const sideSign = stop.sideSign === 0 ? 1 : stop.sideSign
+  const floorTex = useWoodFloorTexture(3, 3)
 
-  const jambDepth = (BAY_DEPTH - DOOR_WIDTH) / 2
-  const jambCenterZ = DOOR_WIDTH / 2 + jambDepth / 2
-  const headerHeight = BAY_HEIGHT - DOOR_HEIGHT
-  const headerCenterY = DOOR_HEIGHT + headerHeight / 2
+  if (!isSide) return <ThresholdBay stop={stop} lit={lit} />
 
-  const frontJambWidth = (BAY_WIDTH - DOOR_WIDTH) / 2
-  const frontJambCenterX = DOOR_WIDTH / 2 + frontJambWidth / 2
+  const halfW = BAY_WIDTH / 2
+  const halfD = BAY_DEPTH / 2
+  const ceilingY = BAY_HEIGHT
 
   return (
     <group position={[stop.offsetX, 0, stop.centerZ]}>
-      {/* far wall, capping the bay */}
-      <mesh position={[0, BAY_HEIGHT / 2, -(BAY_DEPTH / 2)]}>
-        <boxGeometry args={[BAY_WIDTH, BAY_HEIGHT, WALL_THICKNESS]} />
-        <meshStandardMaterial color={stop.wallColor} roughness={0.95} />
+      {/* finished floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+        <planeGeometry args={[BAY_WIDTH, BAY_DEPTH]} />
+        {floorTex ? (
+          <meshStandardMaterial map={floorTex} roughness={0.62} />
+        ) : (
+          <meshStandardMaterial color="#a8794f" roughness={0.62} />
+        )}
       </mesh>
 
-      {/* ceiling — every bay except the closing threshold, which opens up instead of boxing in */}
-      {stop.id !== 'her' && (
-        <mesh position={[0, BAY_HEIGHT + CEILING_THICKNESS / 2, 0]}>
-          <boxGeometry args={[BAY_WIDTH, CEILING_THICKNESS, BAY_DEPTH]} />
-          <meshStandardMaterial color={stop.wallColor} roughness={0.98} />
-        </mesh>
-      )}
+      {/* ceiling */}
+      <mesh position={[0, ceilingY + CEILING_THICKNESS / 2, 0]} receiveShadow>
+        <boxGeometry args={[BAY_WIDTH, CEILING_THICKNESS, BAY_DEPTH]} />
+        <meshStandardMaterial color="#f6f2ea" roughness={0.97} />
+      </mesh>
 
-      {isSide && (
-        <>
-          {/* outer side wall */}
-          <mesh position={[sideSign * (BAY_WIDTH / 2), BAY_HEIGHT / 2, 0]}>
-            <boxGeometry args={[WALL_THICKNESS, BAY_HEIGHT, BAY_DEPTH]} />
-            <meshStandardMaterial color={stop.wallColor} roughness={0.95} />
-          </mesh>
+      {/* far wall — carries the window, so daylight rakes across the room */}
+      <Wall
+        width={BAY_WIDTH}
+        height={BAY_HEIGHT}
+        thickness={WALL_THICKNESS}
+        color={stop.wallColor}
+        position={[0, 0, -halfD]}
+        opening={{
+          centerX: 0,
+          bottomY: WINDOW_SILL,
+          width: WINDOW_WIDTH,
+          height: WINDOW_HEIGHT,
+        }}
+      >
+        <WindowUnit
+          width={WINDOW_WIDTH}
+          height={WINDOW_HEIGHT}
+          wallThickness={WALL_THICKNESS}
+          position={[0, WINDOW_SILL, 0]}
+          frameColor={TRIM}
+        />
+      </Wall>
 
-          {/* corridor-facing wall, with a real doorway cut into it (two jambs + a header) */}
-          <mesh position={[-sideSign * (BAY_WIDTH / 2), BAY_HEIGHT / 2, jambCenterZ]}>
-            <boxGeometry args={[WALL_THICKNESS, BAY_HEIGHT, jambDepth]} />
-            <meshStandardMaterial color={stop.wallColor} roughness={0.95} />
-          </mesh>
-          <mesh position={[-sideSign * (BAY_WIDTH / 2), BAY_HEIGHT / 2, -jambCenterZ]}>
-            <boxGeometry args={[WALL_THICKNESS, BAY_HEIGHT, jambDepth]} />
-            <meshStandardMaterial color={stop.wallColor} roughness={0.95} />
-          </mesh>
-          <mesh position={[-sideSign * (BAY_WIDTH / 2), headerCenterY, 0]}>
-            <boxGeometry args={[WALL_THICKNESS, headerHeight, DOOR_WIDTH]} />
-            <meshStandardMaterial color={stop.wallColor} roughness={0.95} />
-          </mesh>
-        </>
-      )}
+      {/* near wall — the piece that was missing before, and the reason the
+          tour read as a row of open stage sets instead of separate rooms */}
+      <Wall
+        width={BAY_WIDTH}
+        height={BAY_HEIGHT}
+        thickness={WALL_THICKNESS}
+        color={stop.wallColor}
+        position={[0, 0, halfD]}
+      />
 
-      {isEntry && (
-        <>
-          {/* the house's own front facade, with a doorway and a gabled roof over it */}
-          <mesh position={[frontJambCenterX, BAY_HEIGHT / 2, BAY_DEPTH / 2]}>
-            <boxGeometry args={[frontJambWidth, BAY_HEIGHT, WALL_THICKNESS]} />
-            <meshStandardMaterial color="#e6dcc8" roughness={0.9} />
-          </mesh>
-          <mesh position={[-frontJambCenterX, BAY_HEIGHT / 2, BAY_DEPTH / 2]}>
-            <boxGeometry args={[frontJambWidth, BAY_HEIGHT, WALL_THICKNESS]} />
-            <meshStandardMaterial color="#e6dcc8" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, headerCenterY, BAY_DEPTH / 2]}>
-            <boxGeometry args={[DOOR_WIDTH, headerHeight, WALL_THICKNESS]} />
-            <meshStandardMaterial color="#e6dcc8" roughness={0.9} />
-          </mesh>
+      {/* outer wall — faces the doorway, so it's what you look straight at */}
+      <Wall
+        width={BAY_DEPTH}
+        height={BAY_HEIGHT}
+        thickness={WALL_THICKNESS}
+        color={stop.wallColor}
+        position={[sideSign * halfW, 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
 
-          {/* ridge runs left-right (along X) so the pitched surfaces actually face the approaching camera */}
-          <mesh
-            position={[0, BAY_HEIGHT + ROOF_RISE / 2, BAY_DEPTH / 2 + ROOF_RUN / 2]}
-            rotation={[-ROOF_PITCH, 0, 0]}
-          >
-            <boxGeometry args={[ROOF_WIDTH, WALL_THICKNESS, ROOF_SLOPE_LEN]} />
-            <meshStandardMaterial color="#6b4f34" roughness={0.85} />
-          </mesh>
-          <mesh
-            position={[0, BAY_HEIGHT + ROOF_RISE / 2, BAY_DEPTH / 2 - ROOF_RUN / 2]}
-            rotation={[ROOF_PITCH, 0, 0]}
-          >
-            <boxGeometry args={[ROOF_WIDTH, WALL_THICKNESS, ROOF_SLOPE_LEN]} />
-            <meshStandardMaterial color="#6b4f34" roughness={0.85} />
-          </mesh>
-        </>
-      )}
+      {/* corridor wall, with the cased doorway and its open door */}
+      <Wall
+        width={BAY_DEPTH}
+        height={BAY_HEIGHT}
+        thickness={WALL_THICKNESS}
+        color={stop.wallColor}
+        position={[-sideSign * halfW, 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        opening={{ centerX: 0, bottomY: 0, width: DOOR_WIDTH, height: DOOR_HEIGHT }}
+      >
+        {/* The wall is rotated the same way on both sides of the corridor, so
+            the room interior lies toward opposite local directions for a left-
+            hand and a right-hand bay. The swing has to flip with the side or
+            the door opens out into the hallway and blocks the doorway. */}
+        <DoorUnit
+          width={DOOR_WIDTH}
+          height={DOOR_HEIGHT}
+          wallThickness={WALL_THICKNESS}
+          hingeSide={1}
+          openDir={sideSign === 1 ? 1 : -1}
+          openAngle={2.7}
+          casingColor={TRIM}
+        />
+      </Wall>
+
+      {/* skirting + cornice around the room */}
+      <Baseboard width={BAY_WIDTH} thickness={0.05} color={TRIM} position={[0, 0, -halfD + WALL_THICKNESS / 2 + 0.02]} />
+      <Baseboard width={BAY_WIDTH} thickness={0.05} color={TRIM} position={[0, 0, halfD - WALL_THICKNESS / 2 - 0.02]} />
+      <Baseboard
+        width={BAY_DEPTH}
+        thickness={0.05}
+        color={TRIM}
+        position={[sideSign * (halfW - WALL_THICKNESS / 2 - 0.02), 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
+      <CrownMolding
+        width={BAY_WIDTH}
+        thickness={0.045}
+        ceilingY={ceilingY}
+        color={TRIM}
+        position={[0, 0, -halfD + WALL_THICKNESS / 2 + 0.02]}
+      />
+      <CrownMolding
+        width={BAY_DEPTH}
+        thickness={0.045}
+        ceilingY={ceilingY}
+        color={TRIM}
+        position={[sideSign * (halfW - WALL_THICKNESS / 2 - 0.02), 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
 
       <Suspense fallback={null}>
         <PhotoPanel
           image={stop.image}
-          position={
-            isSide
-              ? [sideSign * (BAY_WIDTH / 2 - 0.25), BAY_HEIGHT / 2, 0]
-              : [0, BAY_HEIGHT / 2, -(BAY_DEPTH / 2 - 0.25)]
-          }
-          rotationY={isSide ? -sideSign * (Math.PI / 2) : 0}
-          maxWidth={isSide ? BAY_DEPTH - 1.4 : BAY_WIDTH - 1.4}
-          maxHeight={BAY_HEIGHT - 1}
+          position={[sideSign * (halfW - WALL_THICKNESS / 2 - 0.06), BAY_HEIGHT / 2 + 0.1, 0]}
+          rotationY={-sideSign * (Math.PI / 2)}
+          maxWidth={BAY_DEPTH - 1.5}
+          maxHeight={BAY_HEIGHT - 1.35}
         />
       </Suspense>
 
@@ -125,13 +167,124 @@ export function RoomBay({ stop }: { stop: TourStop }) {
         <FurnitureMesh key={i} piece={piece} mirror={sideSign} />
       ))}
 
-      <pointLight
-        position={isSide ? [sideSign * BAY_WIDTH * 0.3, BAY_HEIGHT * 0.75, 0] : [0, BAY_HEIGHT * 0.75, -(BAY_DEPTH / 2 - 1)]}
-        color={stop.lightColor}
-        intensity={stop.lightIntensity}
-        distance={7}
-        decay={2}
-      />
+      {/* Warm fill from inside, plus cool daylight spilling in at the window.
+          Only mounted for rooms near the camera: forward rendering evaluates
+          every light on every lit fragment, so lighting all sixteen rooms at
+          once costs far more than it shows. */}
+      {lit && (
+        <>
+          <pointLight
+            position={[sideSign * BAY_WIDTH * 0.15, BAY_HEIGHT * 0.8, 0]}
+            color={stop.lightColor}
+            intensity={stop.lightIntensity * 1.5}
+            distance={9}
+            decay={2}
+          />
+          <pointLight
+            position={[0, WINDOW_SILL + WINDOW_HEIGHT * 0.6, -halfD + 0.7]}
+            color="#dceaf6"
+            intensity={1.6}
+            distance={7}
+            decay={2}
+          />
+        </>
+      )}
+    </group>
+  )
+}
+
+/**
+ * The two forward-facing stops: the entry (a real facade you approach from
+ * the yard) and the closing threshold (deliberately open to the sky).
+ */
+function ThresholdBay({ stop, lit }: { stop: TourStop; lit: boolean }) {
+  const isEntry = stop.id === 'entry'
+  const halfW = BAY_WIDTH / 2
+  const halfD = BAY_DEPTH / 2
+  const floorTex = useWoodFloorTexture(3, 3)
+
+  return (
+    <group position={[stop.offsetX, 0, stop.centerZ]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+        <planeGeometry args={[BAY_WIDTH, BAY_DEPTH]} />
+        {floorTex ? (
+          <meshStandardMaterial map={floorTex} roughness={0.62} />
+        ) : (
+          <meshStandardMaterial color="#a8794f" roughness={0.62} />
+        )}
+      </mesh>
+
+      {isEntry && (
+        <>
+          {/* the front door you walk through, in the facade wall */}
+          <Wall
+            width={BAY_WIDTH}
+            height={BAY_HEIGHT}
+            thickness={WALL_THICKNESS}
+            color="#efe7d8"
+            position={[0, 0, halfD]}
+            opening={{ centerX: 0, bottomY: 0, width: DOOR_WIDTH, height: DOOR_HEIGHT }}
+          >
+            <DoorUnit
+              width={DOOR_WIDTH}
+              height={DOOR_HEIGHT}
+              wallThickness={WALL_THICKNESS}
+              hingeSide={1}
+              openDir={-1}
+              openAngle={1.32}
+              slabColor="#8a6a4a"
+              casingColor={TRIM}
+            />
+          </Wall>
+
+          {/* side walls of the entry hall */}
+          <Wall
+            width={BAY_DEPTH}
+            height={BAY_HEIGHT}
+            thickness={WALL_THICKNESS}
+            color="#efe7d8"
+            position={[halfW, 0, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+          <Wall
+            width={BAY_DEPTH}
+            height={BAY_HEIGHT}
+            thickness={WALL_THICKNESS}
+            color="#efe7d8"
+            position={[-halfW, 0, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+
+          <mesh position={[0, BAY_HEIGHT + CEILING_THICKNESS / 2, 0]} receiveShadow>
+            <boxGeometry args={[BAY_WIDTH, CEILING_THICKNESS, BAY_DEPTH]} />
+            <meshStandardMaterial color="#f6f2ea" roughness={0.97} />
+          </mesh>
+
+          <Suspense fallback={null}>
+            <PhotoPanel
+              image={stop.image}
+              position={[0, BAY_HEIGHT / 2 + 0.1, -halfD + 0.12]}
+              rotationY={0}
+              maxWidth={BAY_WIDTH - 1.4}
+              maxHeight={BAY_HEIGHT - 1.3}
+            />
+          </Suspense>
+        </>
+      )}
+
+      {stop.furniture.map((piece, i) => (
+        <FurnitureMesh key={i} piece={piece} mirror={1} />
+      ))}
+
+      {lit && (
+        <pointLight
+          position={[0, BAY_HEIGHT * 0.78, isEntry ? 0 : -0.5]}
+          color={stop.lightColor}
+          intensity={stop.lightIntensity * 1.6}
+          distance={10}
+          decay={2}
+        />
+      )}
     </group>
   )
 }
